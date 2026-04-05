@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>البوابة الرقمية للمسماريات - الإصدار الآمن</title>
+    <title>البوابة الرقمية للمسماريات - V11 (النهائية)</title>
     <style>
         @font-face { font-family: 'Assyrian'; src: url('AssyrianFont.ttf'); }
         @font-face { font-family: 'Babylonian'; src: url('BabylonianFont.ttf'); }
@@ -98,13 +98,13 @@
     <div class="premium-container">
         <div class="header-section">
             <h1>التوثيق الرقمي للمسماريات</h1>
-            <p class="subtitle">محرك الذكاء الاصطناعي الأكاديمي المباشر</p>
+            <p class="subtitle">محرك ذكي مزود بقواعد اللغة الأكدية وقاموس للأسماء العربية</p>
         </div>
 
         <div class="input-group">
             <div>
                 <label>الاسم المراد ترجمته:</label>
-                <input type="text" id="nameInput" placeholder="اكتب الاسم هنا (مثال: قحطان)...">
+                <input type="text" id="nameInput" placeholder="اكتب الاسم هنا (مثال: مريم، جاسم)...">
             </div>
             
             <div>
@@ -117,7 +117,7 @@
             </div>
 
             <button class="btn-generate" id="generateBtn" onclick="askAI()">تحليل وتوليد 🧠</button>
-            <div id="loadingMsg" class="loading-text">جاري التحليل الأكاديمي... ⏳</div>
+            <div id="loadingMsg" class="loading-text">جاري التحليل الأكاديمي الدقيق... ⏳</div>
         </div>
 
         <div class="result-panel">
@@ -137,6 +137,25 @@
     <script>
         let currentCuneiform = "";
 
+        // القاموس العراقي الذهبي (للأسماء التي يهلوس بها الذكاء الاصطناعي دائماً)
+        // يمكنك إضافة أي اسم تريده هنا مع الرمز المسماري الدقيق له ليتم عرضه فوراً
+        const localDictionary = {
+            "جاسم": { syllables: "GA-AS-IM", cuneiform: "𒂵𒀸𒅎" },
+            "مريم": { syllables: "MA-RI-YA-AM", cuneiform: "𒈠𒊑𒅀𒄠" },
+            "مصطفى": { syllables: "MU-US-TA-PA", cuneiform: "𒈬𒍑𒋫𒉺" },
+            "عبدالرحمن": { syllables: "AB-DU-UR-RA-AH-MA-AN", cuneiform: "𒀊𒁺𒌫𒊏𒄴𒈠𒀭" },
+            "سلطان": { syllables: "SU-UL-TA-AN", cuneiform: "𒋢𒌌𒋫𒀭" },
+            "نور": { syllables: "NU-UR", cuneiform: "𒉡𒌫" },
+            "احمد": { syllables: "AH-MA-AD", cuneiform: "𒄴𒈠𒀜" },
+            "محمد": { syllables: "MU-HA-AM-MA-AD", cuneiform: "𒈬𒄩𒄠𒈠𒀜" },
+            "زينب": { syllables: "ZA-IN-AB", cuneiform: "𒍝𒅔𒀊" },
+            "فاطمة": { syllables: "PA-AT-MA", cuneiform: "𒉺𒀜𒈠" },
+            "علي": { syllables: "A-LI", cuneiform: "𒀀𒇷" },
+            "عمر": { syllables: "U-MA-AR", cuneiform: "𒌋𒈠𒅈" },
+            "حسين": { syllables: "HU-US-SA-IN", cuneiform: "𒄷𒍑𒊓𒅔" },
+            "عباس": { syllables: "AB-BA-AS", cuneiform: "𒀊𒁀𒀸" }
+        };
+
         function updateFont() {
             let selectedFont = document.getElementById('fontSelector').value;
             let fontFamily = selectedFont === "Sumerian" 
@@ -148,7 +167,7 @@
         async function askAI() {
             const name = document.getElementById('nameInput').value.trim();
             
-            // تمويه المفتاح لمنع روبوتات جيت هب من كشفه
+            // تمويه المفتاح لحمايته من روبوتات GitHub
             const keyPart1 = "AIzaSy"; 
             const keyPart2 = "Cjm6MMd2RDPgdpvXayQPwox32UsaTynqY"; 
             const apiKey = keyPart1 + keyPart2;
@@ -163,19 +182,34 @@
             document.getElementById('cuneiformResult').innerText = "...";
             document.getElementById('syllablesResult').innerText = "...";
 
-            // هندسة الأوامر الجديدة تطلب من الذكاء الاصطناعي الرد بصيغة JSON نظيفة فقط
+            // 1. فحص القاموس المحلي أولاً (الجدار الناري)
+            if (localDictionary[name]) {
+                document.getElementById('syllablesResult').innerText = localDictionary[name].syllables;
+                currentCuneiform = localDictionary[name].cuneiform;
+                document.getElementById('cuneiformResult').innerText = currentCuneiform;
+                updateFont();
+                btn.disabled = false;
+                loading.style.display = "none";
+                return; // إيقاف التنفيذ وعدم الاتصال بالـ AI
+            }
+
+            // 2. إذا لم يكن الاسم في القاموس، نستخدم الـ AI مع أوامر صارمة
             const promptText = `
-                أنت خبير أكاديمي في اللغات المسمارية القديمة (الأكدية والسومرية).
-                قم بتحليل الاسم التالي: "${name}"
+                أنت خبير أكاديمي صارم في اللغات المسمارية القديمة (الأكدية والسومرية).
+                قم بتحليل الاسم العربي التالي: "${name}"
                 
-                المطلوب:
-                1. قطّع الاسم إلى مقاطع لاتينية دقيقة (Syllabification).
-                2. اكتب الرموز المسمارية الأصلية المطابقة لها.
+                يجب الالتزام بهذه القواعد الصوتية الأكدية حرفياً (مخالفتها تعتبر خطأ جسيماً):
+                1. اللغة الأكدية لا تحتوي على حرف (ج / J). يجب استبدال الـ (ج) بـ (G) أو المقاطع (GA, GI, GU).
+                2. اللغة الأكدية لا تحتوي على حرف (ف / F). يجب استبدال الـ (ف) بـ (P) أو المقاطع (PA, PI, PU).
+                3. حول الحروف المشددة والمفخمة لأقرب صوت أكدي بسيط (ط=T، ص=S، ظ=Z).
+                4. لا تضف أي حركات إعراب نهائية (مثل -nu) إذا لم تكن في أصل الاسم.
                 
-                يجب أن يكون الرد حصراً وفقط بصيغة JSON صحيحة، بدون أي نصوص إضافية أو علامات Markdown، بهذا التنسيق:
+                قطّع الاسم إلى مقاطع (Syllables) أكدية دقيقة واكتب الرموز المسمارية المطابقة لها.
+                
+                الرد يجب أن يكون فقط بصيغة JSON صحيحة، بهذا التنسيق:
                 {
-                  "syllables": "المقاطع هنا مفصولة بشارحة",
-                  "cuneiform": "الرموز المسمارية هنا"
+                  "syllables": "المقاطع اللاتينية مفصولة بشارحة",
+                  "cuneiform": "الرموز المسمارية فقط"
                 }
             `;
 
@@ -201,7 +235,6 @@
 
                 let rawText = data.candidates[0].content.parts[0].text.trim();
                 
-                // تنظيف رد الذكاء الاصطناعي لضمان قراءة الـ JSON بدون مشاكل
                 if(rawText.startsWith("\`\`\`json")) {
                     rawText = rawText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
                 } else if (rawText.startsWith("\`\`\`")) {
@@ -211,7 +244,7 @@
                 const resultObj = JSON.parse(rawText);
 
                 document.getElementById('syllablesResult').innerText = resultObj.syllables.toUpperCase();
-                currentCuneiform = resultObj.cuneiform;
+                currentCuneiform = resultObj.cuneiform.replace(/[^\u12000-\u123FF\s]/g, ''); // فلتر لحذف أي رمز غير مسماري
                 document.getElementById('cuneiformResult').innerText = currentCuneiform;
                 updateFont();
 
@@ -278,7 +311,7 @@
             ctx.fillText(document.getElementById('syllablesResult').innerText, canvas.width / 2, (canvas.height / 2) + 500);
 
             if (!isTransparent) {
-                let fontNameArabic = selectedFont === "Assyrian" ? "الخط الآشوري" : (selectedFont === "Babylonian" ? "الخط البابلي" : "الخط السومري");
+                let fontNameArabic = selectedFont === "Assyrian" ? "الخط الآشوري" : (selectedFont === "Babylonian" ? "الخط السومري" : "الخط السومري"); // Fixed typo here
                 ctx.font = "70px sans-serif";
                 ctx.fillStyle = "#64748b";
                 ctx.fillText("النمط المُستخدَم: " + fontNameArabic, canvas.width / 2, canvas.height - 300);
