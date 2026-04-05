@@ -265,7 +265,7 @@ input[type="text"]:focus {
 </footer>
 
 <script>
-// 1. القاموس المحلي مدمج به جميع الأسماء التي طلبتها لتعمل بسرعة وبدون VPN
+// القاموس المحلي المدمج
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
     "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
@@ -290,7 +290,7 @@ const localNamesDictionary = {
     "سلطان": "su ul ța an", "عثمان": "u ut ma an", "عمران": "u um ra an"
 };
 
-// 2. قاموس المقاطع المسمارية
+// قاموس المقاطع المسمارية
 const cuneiformMap = {
 "diš": "𒁹", "mí": "𒊩", "ba": "𒁀", "be": "𒁁", "bi": "𒁉", "bu": "𒁍", "pu": "𒁍", 
 "ab": "𒀊", "ap": "𒀊", "eb": "𒅁", "ib": "𒅁", "ep": "𒅁", "ip": "𒅁", "ub": "𒌒", "up": "𒌒", 
@@ -323,7 +323,8 @@ const cuneiformMap = {
 "ay": "𒀀𒀀", "ey": "𒀀𒀀", "iy": "𒀀𒀀", "uy": "𒀀𒀀"
 };
 
-const GEMINI_API_KEY = "AIzaSyAoRRMyoRUVHWmEfTTBrx3lB2-JoADfVp0";
+// مفتاح API لـ Groq الجديد
+const GROQ_API_KEY = "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";
 
 const SYSTEM_PROMPT = `You are an expert in syllabic transliteration for cuneiform writing (Akkadian-style).
 
@@ -344,13 +345,7 @@ RULES:
    - i (for light sounds)
    - u (for rounded sounds)
 4. Convert Arabic letters strictly:
-   س = s
-   ص = ṣ
-   ش = š
-   ح = ḥ
-   خ = kh
-   ط = ṭ
-   ع = ʿ
+   س = s, ص = ṣ, ش = š, ح = ḥ, خ = kh, ط = ṭ, ع = ʿ
 5. FORCE syllable splitting even if unnatural.
 6. Examples:
    أحمد → ah ma ad
@@ -383,47 +378,51 @@ async function processName() {
     const outputEl = document.getElementById("cuneiformOutput");
     const loadingEl = document.getElementById("loadingOverlay");
 
-    // فحص القاموس المحلي أولاً
+    // الفحص بالقاموس المحلي أولاً
     if (localNamesDictionary[arName]) {
         let syllables = localNamesDictionary[arName];
         outputEl.innerText = textToCuneiform(syllables);
         return; 
     }
 
-    // إذا الاسم جديد وما موجود بالقاموس، نستخدم الـ API
     loadingEl.style.display = "flex";
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const fullPrompt = `${SYSTEM_PROMPT}\n\nName to convert: ${arName}`;
+        const url = "https://api.groq.com/openai/v1/chat/completions";
         
         const requestBody = {
-            contents: [{ parts: [{ text: fullPrompt }] }]
+            model: "llama3-8b-8192",
+            messages: [
+                { role: "system", content: SYSTEM_PROMPT },
+                { role: "user", content: `Name to convert: ${arName}` }
+            ],
+            temperature: 0.1
         };
 
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${GROQ_API_KEY}`
+            },
             body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error(`API Error ${response.status}`);
+            const errText = await response.text();
+            throw new Error(`API Error ${response.status}: ${errText}`);
         }
 
         const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
-
-        let aiSyllables = data.candidates[0].content.parts[0].text;
+        let aiSyllables = data.choices[0].message.content;
         
-        // تنظيف المخرجات للإبقاء على الحروف والمسافات المطلوبة فقط
+        // تنظيف المخرجات من أي نص إضافي
         aiSyllables = aiSyllables.replace(/[^a-zA-Z\sțșšṭṣḥʿ]/g, "").trim().toLowerCase();
         outputEl.innerText = textToCuneiform(aiSyllables);
 
     } catch (error) {
         console.error("خطأ:", error);
-        // رسالة الخطأ توضح للمستخدم العراقي أن المشكلة هي حجب الخدمة وتحتاج VPN
-        alert("🚨 صار خطأ بالاتصال بالذكاء الاصطناعي!\n\nهذا الاسم يحتاج توليد جديد، وخدمات Google محجوبة في العراق.\nيرجى تشغيل تطبيق (VPN) والمحاولة مرة أخرى.");
+        alert("🚨 صار خطأ بالاتصال! يرجى المحاولة مرة أخرى.");
     } finally {
         loadingEl.style.display = "none";
     }
