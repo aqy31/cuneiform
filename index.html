@@ -355,53 +355,47 @@ const part1 = "gsk_mCbhTewoqrNZuysVVgbO";
 const part2 = "WGdyb3FYfw1eP6wNVNRwQtxfHy58b8Ub";
 const GROQ_API_KEY = part1 + part2;
 
-// البرومبت الشامل والمعدل للذكاء الاصطناعي
-const SYSTEM_PROMPT = `You are an expert in syllabic transliteration for cuneiform writing (Akkadian-style).
+// البرومبت الشامل والمعدل للذكاء الاصطناعي بناءً على طلبك
+const SYSTEM_PROMPT = `You are an expert computational linguist specializing in Akkadian cuneiform syllabary. 
+Your ONLY task is to transliterate Arabic names into a STRICT sequence of Latin syllables.
 
-Your task is to convert Arabic names into a STRICT syllabic Latin format suitable for cuneiform.
+CRITICAL RULES & PHONETIC MAPPINGS:
+1. Map Arabic letters to Akkadian equivalents as follows:
+   - ث -> t
+   - ج, غ -> g
+   - ف -> p
+   - ش -> š
+   - ص, ض -> ṣ
+   - ط, ظ -> ṭ
+   - ح, خ, هـ -> h
+   - س -> s
+   - ق -> q
+   - ع, ء, ا, ى, ة -> a (or e, i, u depending on vocal flow)
+   - و -> w (or u)
+   - ي -> y (or i)
 
-IMPORTANT: Do NOT produce natural pronunciation.
-Instead, FORCE the word into clear syllabic blocks using this pattern:
-- CV (consonant + vowel)
-- VC (vowel + consonant)
+2. SYLLABLE STRUCTURE:
+   - Break all names into basic blocks: CV (Consonant-Vowel) or VC (Vowel-Consonant).
+   - NEVER output a standalone consonant. Every consonant MUST have a vowel attached.
+   - Force syllable splitting even if it sounds unnatural in Arabic. Break clusters completely.
 
-RULES:
+3. THE ALLOWED DICTIONARY (STRICT):
+   You are FORBIDDEN from using any syllable that is not in this exact list. If a direct match doesn't exist, use the closest phonetic match from this list ONLY:
+   [diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
 
-1. Every consonant MUST be attached to a vowel (a, i, u).
-2. Break clusters:
-   - "ḥm" → "ḥa ma"
-   - "md" → "ma ad"
+4. EXAMPLES OF EXPECTED BEHAVIOR:
+   - سجى -> sa ga
+   - مشاعل -> ma ša il
+   - عبدالرحمن -> ab du ul ra ah ma an
+   - حفصة -> ha pa ṣa
+   - محمد -> mu ha ma ad
+   - احمد -> ah ma ad
 
-3. Use ONLY these vowels:
-   - a (default)
-   - i (for light sounds)
-   - u (for rounded sounds)
-
-4. Convert Arabic letters:
-   س = s
-   ص = ṣ
-   ش = š
-   ح = ḥ
-   خ = h
-   ط = ṭ
-   ع = a
-   ف = p
-   ق = q
-   ج = g
-
-5. FORCE syllable splitting even if unnatural.
-
-6. Examples:
-   أحمد → ah ma ad
-   نور → nu ur
-   خالد → ha li id
-   محمد → mu ha ma ad
-
-7. Output ONLY syllables separated by spaces.
-8. No explanation.
-9. No Arabic text.
-
-The output must be directly usable for cuneiform conversion.`;
+5. OUTPUT FORMAT:
+   - Output ONLY the final space-separated syllables.
+   - NO Arabic text.
+   - NO formatting.
+   - NO explanations or greetings.`;
 
 // فلتر النصوص لضمان قراءة المسماري
 function textToCuneiform(syllablesText) {
