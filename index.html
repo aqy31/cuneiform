@@ -224,7 +224,7 @@ input[type="text"]:focus {
 <div id="loadingOverlay">جاري التحويل عبر الذكاء الاصطناعي... ⏳</div>
 
 <header class="site-header">
-    <img src="logo.png" alt="AQY Logo" class="logo" />
+    <img src="logo.png" alt="AQY Logo" class="logo" onerror="this.src='https://via.placeholder.com/150x120?text=AQY+Logo'" />
 </header>
 
 <main>
@@ -265,7 +265,7 @@ input[type="text"]:focus {
 </footer>
 
 <script>
-// 1. القاموس المحلي للأسماء الشائعة (يخفف الضغط عن الذكاء الاصطناعي ويجعله أسرع)
+// القاموس المحلي مدمج بالأسماء التي طلبتها لتقليل استهلاك الـ API
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
     "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
@@ -289,7 +289,7 @@ const localNamesDictionary = {
     "دلال": "da la al", "رؤى": "ru a", "بيداء": "ba ay da", "إيلاف": "i la ap", "ايلاف": "i la ap"
 };
 
-// 2. قاموس المقاطع المسمارية
+// قاموس المقاطع المسمارية
 const cuneiformMap = {
 "diš": "𒁹", "mí": "𒊩", "ba": "𒁀", "be": "𒁁", "bi": "𒁉", "bu": "𒁍", "pu": "𒁍", 
 "ab": "𒀊", "ap": "𒀊", "eb": "𒅁", "ib": "𒅁", "ep": "𒅁", "ip": "𒅁", "ub": "𒌒", "up": "𒌒", 
@@ -323,27 +323,42 @@ const cuneiformMap = {
 };
 
 const GEMINI_API_KEY = "AIzaSyAoRRMyoRUVHWmEfTTBrx3lB2-JoADfVp0";
+
+// البرومبت الخاص بك مضبوط بشكل دقيق
 const SYSTEM_PROMPT = `You are an expert in syllabic transliteration for cuneiform writing (Akkadian-style).
-Convert Arabic names into STRICT syllabic Latin format.
+
+Your task is to convert Arabic names into a STRICT syllabic Latin format suitable for cuneiform.
+
+IMPORTANT: Do NOT produce natural pronunciation.
+Instead, FORCE the word into clear syllabic blocks using this pattern:
+- CV (consonant + vowel)
+- VC (vowel + consonant)
+
 RULES:
 1. Every consonant MUST be attached to a vowel (a, i, u).
-2. Break clusters: "ḥm" -> "ha ma", "md" -> "ma ad".
-3. Use ONLY standard english vowels (a, i, u). No accents.
-4. Convert Arabic letters strictly.
-5. FORCE syllable splitting.
-6. Output ONLY syllables separated by spaces. No markdown, no quotes, no explanations.`;
+2. Break clusters:
+   - "ḥm" → "ha ma"
+   - "md" → "ma ad"
+3. Use ONLY these vowels: a (default), i (for light sounds), u (for rounded sounds).
+4. Convert Arabic letters strictly:
+   س = s, ص = ṣ, ش = š, ح = ḥ, خ = kh, ط = ṭ, ع = ʿ
+5. FORCE syllable splitting even if unnatural.
+6. Output ONLY syllables separated by spaces.
+7. No explanation. No Arabic text.`;
 
 function textToCuneiform(syllablesText) {
-    let syllables = syllablesText.toLowerCase();
+    // توحيد الحروف الخاصة لتتطابق مع القاموس المسماري (مثلاً: ṭ تصبح ț)
+    let processedText = syllablesText.toLowerCase()
+        .replace(/ṭ/g, 'ț')
+        .replace(/ṣ/g, 'ș')
+        .replace(/ḥ/g, 'h')
+        .replace(/kh/g, 'h')
+        .replace(/ʿ/g, ''); // تجاهل حرف العين لأنه غير موجود في المسماري المباشر
 
-    // ترتيب المفاتيح من الأطول للأقصر لتجنب التداخل
     const keysSorted = Object.keys(cuneiformMap).sort((a, b) => b.length - a.length);
     const pattern = keysSorted.join("|");
     
-    // التحويل إلى مسماري
-    let cuneiformText = syllables.replace(new RegExp(pattern, "g"), match => cuneiformMap[match] || "");
-    
-    // مسح المسافات النهائية
+    let cuneiformText = processedText.replace(new RegExp(pattern, "g"), match => cuneiformMap[match] || "");
     return cuneiformText.replace(/\s+/g, "");
 }
 
@@ -354,7 +369,7 @@ async function processName() {
     const outputEl = document.getElementById("cuneiformOutput");
     const loadingEl = document.getElementById("loadingOverlay");
 
-    // 1. البحث في القاموس أولاً
+    // 1. البحث في القاموس أولاً لتوفير حصة الـ API وتجنب الانتظار
     if (localNamesDictionary[arName]) {
         let syllables = localNamesDictionary[arName];
         outputEl.innerText = textToCuneiform(syllables);
@@ -367,11 +382,11 @@ async function processName() {
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
-        // دمج الأمر مع الاسم لتفادي أخطاء الـ API
-        const fullPrompt = `${SYSTEM_PROMPT}\n\nName to convert: ${arName}`;
-        
         const requestBody = {
-            contents: [{ parts: [{ text: fullPrompt }] }]
+            systemInstruction: {
+                parts: [{ text: SYSTEM_PROMPT }]
+            },
+            contents: [{ parts: [{ text: `Name to convert: ${arName}` }] }]
         };
 
         const response = await fetch(url, {
@@ -390,14 +405,14 @@ async function processName() {
 
         let aiSyllables = data.candidates[0].content.parts[0].text;
         
-        // 🔥 الفلتر الصارم: مسح أي شيء عدا الحروف الإنجليزية والمسافات 🔥
-        aiSyllables = aiSyllables.replace(/[^a-zA-Z\s]/g, "").trim().toLowerCase();
+        // إصلاح الفلتر: السماح للأحرف الخاصة التي يولدها الذكاء الاصطناعي بالمرور
+        aiSyllables = aiSyllables.replace(/[^a-zA-Z\sțșšṭṣḥʿ]/g, "").trim().toLowerCase();
 
         outputEl.innerText = textToCuneiform(aiSyllables);
 
     } catch (error) {
         console.error("تفاصيل الخطأ الدقيقة:", error);
-        alert("صار خطأ بالاتصال! (اضغط F12 وشوف الـ Console لمعرفة السبب).");
+        alert("صار خطأ بالاتصال! (تأكد من اتصالك بالإنترنت أو أن مفتاح الـ API يعمل).");
     } finally {
         loadingEl.style.display = "none";
     }
