@@ -2,154 +2,259 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المترجم المسماري الذكي (AI)</title>
+    <title>منصة التوثيق الرقمي - المسمارية</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #e5dfd3; /* لون طيني مستوحى من ألواح بابل */
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        /* الخطوط الخاصة بك */
+        @font-face {
+            font-family: 'Assyrian';
+            src: url('AssyrianFont.ttf'); 
+        }
+        @font-face {
+            font-family: 'Babylonian';
+            src: url('BabylonianFont.ttf');
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            /* خلفية حية ودافئة */
+            background: linear-gradient(135deg, #fdfbfb 0%, #e2d1c3 100%);
+            min-height: 100vh;
+            color: #333; 
+            text-align: center; 
+            padding: 40px; 
             margin: 0;
         }
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-            text-align: center;
-            max-width: 450px;
-            width: 100%;
+        .container { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            max-width: 650px; 
+            margin: 0 auto; 
+            border-top: 6px solid #8e44ad;
         }
-        h1 {
-            color: #5c3a21; /* بني داكن */
-            margin-bottom: 5px;
-        }
-        p {
-            color: #666;
-            font-size: 14px;
+        h1 { color: #2c3e50; }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             margin-bottom: 20px;
         }
-        input {
-            width: 90%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            font-size: 16px;
-            text-align: center;
+        input[type="text"], select { 
+            padding: 12px; 
+            font-size: 16px; 
+            border: 2px solid #ccc; 
+            border-radius: 6px; 
+            outline: none;
         }
-        button {
-            background-color: #5c3a21;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.3s;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #422816;
-        }
-        button:disabled {
-            background-color: #999;
-            cursor: not-allowed;
-        }
-        .result-box {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #f7f3eb;
-            border: 2px dashed #5c3a21;
-            border-radius: 6px;
-            min-height: 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
+        input[type="text"] { width: 60%; }
+        select { width: 35%; cursor: pointer; }
+        
+        button { 
+            padding: 12px 20px; 
+            font-size: 15px; 
+            background-color: #2c3e50; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            margin: 5px; 
+            transition: 0.3s;
             font-weight: bold;
-            line-height: 1.6;
         }
+        button:hover { background-color: #1a252f; transform: translateY(-2px); }
+        .btn-download-bg { background-color: #e67e22; }
+        .btn-download-bg:hover { background-color: #d35400; }
+        .btn-download-clear { background-color: #27ae60; }
+        .btn-download-clear:hover { background-color: #2ecc71; }
+
+        .result-box { 
+            margin-top: 25px; 
+            padding: 25px; 
+            background: #fdfbf7; 
+            border-radius: 8px; 
+            border: 1px solid #e0dcd3; 
+        }
+        .cuneiform-text { 
+            font-size: 60px; 
+            margin: 20px 0; 
+            color: #2c3e50; 
+        }
+        .syllables-text { 
+            font-size: 22px; 
+            color: #c0392b; 
+            direction: ltr; 
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        canvas { display: none; } 
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>المترجم المسماري الذكي</h1>
-        <p>اكتب أي اسم بالعربي، وسيقوم الذكاء الاصطناعي بتحليله صوتياً وتحويله للمسمارية.</p>
+        <h1>مُوَلِّد الأسماء المسمارية</h1>
+        <p>اختر الخط واكتب اسماً (الأسماء المدعومة للتجربة: عبدالرحمن، محمد، احمد، علي، عمر، نور)</p>
         
-        <input type="text" id="nameInput" placeholder="اكتب الاسم هنا (مثال: عبدالرحمن)" autocomplete="off">
-        <button id="translateBtn" onclick="translateName()">حلل وحول إلى المسمارية</button>
-
-        <div class="result-box" id="resultDisplay">
-            النتيجة ستظهر هنا...
+        <div class="controls">
+            <input type="text" id="arabicName" placeholder="اكتب الاسم هنا...">
+            <select id="fontSelector" onchange="updateFont()">
+                <option value="Sumerian">الخط السومري (الأساسي)</option>
+                <option value="Assyrian">الخط الآشوري</option>
+                <option value="Babylonian">الخط البابلي</option>
+            </select>
+        </div>
+        
+        <button onclick="translateToCuneiform()">توليد النص</button>
+        
+        <div id="resultArea" class="result-box" style="display:none;">
+            <div id="syllablesResult" class="syllables-text"></div>
+            <div id="cuneiformResult" class="cuneiform-text"></div>
+            
+            <button onclick="copyText()">نسخ النص 📋</button>
+            <br><br>
+            <button class="btn-download-bg" onclick="downloadPNG(false)">تحميل صورة بخلفية 🖼️</button>
+            <button class="btn-download-clear" onclick="downloadPNG(true)">تحميل صورة مفرغة (شفافة) 🔲</button>
         </div>
     </div>
 
+    <canvas id="exportCanvas" width="3000" height="1800"></canvas>
+
     <script>
-        async function translateName() {
-            const inputVal = document.getElementById('nameInput').value;
-            const resultBox = document.getElementById('resultDisplay');
-            const button = document.getElementById('translateBtn');
-            
-            if (inputVal.trim() === '') {
-                resultBox.innerHTML = '<span style="color:red; font-size:16px;">يرجى كتابة اسم أولاً!</span>';
+        const cuneiformMap = {
+            "ah": "𒄴", "ma": "𒈠", "ad": "𒀜",
+            "mu": "𒈬", "ha": "𒄩", "am": "𒄠",
+            "ab": "𒀊", "du": "𒁺", "ul": "𒌌", "ra": "𒊏", "an": "𒀭",
+            "a": "𒀀", "li": "𒇷",
+            "u": "𒌋", "ar": "𒅈",
+            "nu": "𒉡", "ur": "𒌫"
+        };
+
+        const nameToSyllables = {
+            "احمد": ["ah", "ma", "ad"],
+            "محمد": ["mu", "ha", "am", "ma", "ad"],
+            "عبدالرحمن": ["ab", "du", "ul", "ra", "ah", "ma", "an"],
+            "علي": ["a", "li"],
+            "عمر": ["u", "ma", "ar"],
+            "نور": ["nu", "ur"]
+        };
+
+        let currentCuneiform = "";
+
+        function getFontFamily() {
+            let selectedFont = document.getElementById('fontSelector').value;
+            return selectedFont === "Sumerian" ? "sans-serif" : selectedFont;
+        }
+
+        function updateFont() {
+            document.getElementById('cuneiformResult').style.fontFamily = getFontFamily();
+        }
+
+        function translateToCuneiform() {
+            let name = document.getElementById('arabicName').value.trim();
+            let syllables = nameToSyllables[name];
+
+            if (!syllables) {
+                alert("الاسم غير موجود في القاموس التجريبي.");
                 return;
             }
 
-            // إظهار حالة التحميل وتجميد الزر
-            button.disabled = true;
-            button.innerText = "جاري التحليل بالذكاء الاصطناعي...";
-            resultBox.innerHTML = '<span style="color:gray; font-size:16px;">يتم الآن استدعاء خبراء بابل...</span>';
+            let syllablesStr = syllables.join(" - ").toUpperCase();
+            document.getElementById('syllablesResult').innerText = syllablesStr;
 
-            // مفتاح الـ API الخاص بك من Groq
-            const apiKey = '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'; 
-            const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            currentCuneiform = syllables.map(s => cuneiformMap[s]).join(" ");
+            document.getElementById('cuneiformResult').innerText = currentCuneiform;
 
-            const promptText = `أنت خبير في اللغات الرافدينية القديمة (الأكدية والسومرية). قم بتحليل الاسم العربي التالي: "${inputVal}". 
-            أولاً: حوّله إلى اللفظ المقطعي اللاتيني الصحيح حسب قواعد اللغة القديمة.
-            ثانياً: اكتبه بالخط المسماري.
-            أريد الإجابة بهذا التنسيق فقط بدون أي مقدمات أو شروحات إضافية:
-            اللفظ المقطعي: [النتيجة اللاتينية]
-            المسماري: [النتيجة المسمارية]`;
+            document.getElementById('resultArea').style.display = 'block';
+            updateFont();
+        }
 
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: "llama3-70b-8192", // الموديل الذكي والسريع من Groq
-                        messages: [{"role": "user", "content": promptText}],
-                        temperature: 0.3 // لضمان دقة وجدية الإجابة
-                    })
-                });
+        function copyText() {
+            navigator.clipboard.writeText(currentCuneiform).then(() => {
+                alert("تم النسخ بنجاح!");
+            });
+        }
 
-                const data = await response.json();
-                
-                if(data.error) {
-                    resultBox.innerHTML = `<span style="color:red; font-size:16px;">خطأ: ${data.error.message}</span>`;
-                } else {
-                    // استخراج النتيجة وعرضها
-                    const aiResult = data.choices[0].message.content;
-                    resultBox.innerHTML = aiResult.replace(/\n/g, '<br>');
-                }
+        function downloadPNG(isTransparent) {
+            const canvas = document.getElementById('exportCanvas');
+            const ctx = canvas.getContext('2d');
+            let fontName = getFontFamily();
 
-            } catch (error) {
-                resultBox.innerHTML = '<span style="color:red; font-size:16px;">حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت.</span>';
-                console.error("Error details:", error);
+            // مسح الكانفاس بالكامل أولاً
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!isTransparent) {
+                // رسم خلفية متدرجة للبطاقة
+                let gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, "#1e272e");
+                gradient.addColorStop(1, "#2f3640");
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // إطار داخلي
+                ctx.strokeStyle = "#c0392b";
+                ctx.lineWidth = 15;
+                ctx.strokeRect(100, 100, canvas.width - 200, canvas.height - 200);
+                ctx.strokeStyle = "#e67e22";
+                ctx.lineWidth = 8;
+                ctx.strokeRect(130, 130, canvas.width - 260, canvas.height - 260);
+
+                // ترويسة
+                ctx.fillStyle = "#95a5a6";
+                ctx.font = "60px 'Segoe UI', Tahoma, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("سِجِلّ التوثيق الرقمي للمسماريات", canvas.width / 2, 250);
             }
 
-            // إرجاع الزر لوضعه الطبيعي بعد انتهاء التحميل
-            button.disabled = false;
-            button.innerText = "حلل وحول إلى المسمارية";
+            // إعداد النص المسماري مع التحجيم التلقائي
+            let baseFontSize = 450; // حجم خط عملاق مبدئي
+            ctx.font = baseFontSize + "px " + fontName;
+            
+            // تصغير الخط تدريجياً إذا كان النص أعرض من الشاشة
+            let maxWidth = canvas.width - 400; // مساحة الأمان
+            while (ctx.measureText(currentCuneiform).width > maxWidth && baseFontSize > 100) {
+                baseFontSize -= 20;
+                ctx.font = baseFontSize + "px " + fontName;
+            }
+
+            // رسم النص المسماري
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            if (!isTransparent) {
+                ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+                ctx.shadowBlur = 30;
+                ctx.shadowOffsetX = 10;
+                ctx.shadowOffsetY = 10;
+                ctx.fillStyle = "#ecf0f1"; // لون فاتح للخلفية الغامقة
+            } else {
+                ctx.shadowColor = "transparent";
+                ctx.fillStyle = "#2c3e50"; // لون غامق للمفرغ
+            }
+            
+            ctx.fillText(currentCuneiform, canvas.width / 2, canvas.height / 2);
+
+            // إيقاف الظل
+            ctx.shadowColor = "transparent";
+
+            // رسم المقاطع اللاتينية أسفل النص المسماري
+            ctx.font = "bold 90px sans-serif";
+            ctx.fillStyle = isTransparent ? "#c0392b" : "#e67e22";
+            ctx.fillText(document.getElementById('syllablesResult').innerText, canvas.width / 2, (canvas.height / 2) + 350);
+
+            // اسم الخط المستخدم
+            if (!isTransparent) {
+                let selectedVal = document.getElementById('fontSelector').value;
+                let fontNameArabic = selectedVal === "Assyrian" ? "الخط الآشوري" : (selectedVal === "Babylonian" ? "الخط البابلي" : "الخط السومري");
+                ctx.font = "50px sans-serif";
+                ctx.fillStyle = "#7f8c8d";
+                ctx.fillText("النمط المُستخدَم: " + fontNameArabic, canvas.width / 2, canvas.height - 200);
+            }
+
+            // التصدير
+            const link = document.createElement('a');
+            link.download = 'Digital_Documentation_' + (isTransparent ? 'Transparent_' : '') + document.getElementById('arabicName').value + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
     </script>
 </body>
