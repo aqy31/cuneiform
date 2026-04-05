@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+/* تجهيز الخطوط للتبديل الفوري */
 @font-face {
     font-family: 'AssyrianCuneiform';
     src: url('Assyrian.ttf') format('truetype');
@@ -48,15 +49,17 @@ body {
 }
 
 .site-header .logo {
-    height: 120px;
+    height: 100px;
     transition: height 0.3s ease;
+    max-width: 100%;
+    object-fit: contain;
 }
 
 main {
     flex: 1;
     max-width: 1000px;
     margin: 30px auto;
-    padding: 0 20px;
+    padding: 0 15px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -74,7 +77,7 @@ h1 {
     margin-top: 0;
     margin-bottom: 30px;
     font-weight: 700;
-    font-size: 28px;
+    font-size: clamp(20px, 4vw, 28px);
 }
 
 .input-section {
@@ -92,6 +95,8 @@ input[type="text"] {
     border-radius: 12px;
     font-family: 'Cairo', sans-serif;
     transition: border-color 0.3s;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 input[type="text"]:focus {
@@ -112,6 +117,7 @@ input[type="text"]:focus {
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
 }
 
 .btn-convert:hover { background-color: #333; }
@@ -136,6 +142,7 @@ input[type="text"]:focus {
     font-weight: 700;
     transition: all 0.3s;
     color: #555;
+    font-size: 14px;
 }
 
 .btn-option:hover { background-color: #e2e6ea; }
@@ -145,23 +152,30 @@ input[type="text"]:focus {
     color: #1a1a1a;
 }
 
-.output-section { text-align: center; position: relative; }
+.output-section { 
+    text-align: center; 
+    position: relative; 
+    width: 100%;
+}
 
 .cuneiform-capture-area {
-    padding: 40px;
+    padding: 30px 20px;
     background-color: #fff;
     border-radius: 15px;
     display: inline-block;
-    min-width: 300px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     margin-bottom: 20px;
     border: 1px dashed #ccc;
+    overflow-wrap: break-word;
 }
 
 #cuneiformOutput {
-    font-size: 80px; 
+    font-size: clamp(40px, 8vw, 80px); /* حجم متجاوب */
     line-height: 1.2;
     margin: 0;
-    min-height: 100px;
+    min-height: 80px;
     word-wrap: break-word;
     font-family: 'SumerianCuneiform', 'Noto Sans Cuneiform', sans-serif;
     color: #1a1a1a;
@@ -169,18 +183,29 @@ input[type="text"]:focus {
     direction: ltr;
 }
 
+#latinOutput {
+    font-size: 16px;
+    color: #6c757d;
+    margin-top: 15px;
+    margin-bottom: 0;
+    font-family: 'Cairo', sans-serif;
+    letter-spacing: 1.5px;
+    direction: ltr;
+    text-transform: lowercase;
+}
+
 .action-buttons {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
 .btn-action {
-    padding: 12px 24px;
+    padding: 12px 20px;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -200,7 +225,7 @@ input[type="text"]:focus {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(255,255,255,0.9);
     display: none; justify-content: center; align-items: center;
-    z-index: 1000; font-size: 24px; font-weight: 700; color: #1a1a1a;
+    z-index: 1000; font-size: clamp(18px, 4vw, 24px); font-weight: 700; color: #1a1a1a;
 }
 
 .site-footer {
@@ -210,11 +235,12 @@ input[type="text"]:focus {
 .social-links a { color: #ffcc00; text-decoration: none; margin: 0 8px; transition: color 0.3s; }
 .social-links a:hover { color: white; }
 
+/* إعدادات الموبايل المخصصة */
 @media (max-width: 600px) {
-    .main-container { padding: 20px; }
-    .input-section { flex-direction: column; }
-    .btn-convert { width: 100%; }
-    #cuneiformOutput { font-size: 50px; }
+    .main-container { padding: 20px 15px; }
+    .input-section { flex-direction: column; width: 100%; }
+    .btn-convert { width: 100%; justify-content: center; }
+    .action-buttons { flex-direction: column; width: 100%; }
     .btn-action { width: 100%; justify-content: center; }
 }
 </style>
@@ -245,6 +271,7 @@ input[type="text"]:focus {
         <div class="output-section">
             <div class="cuneiform-capture-area" id="captureArea">
                 <p id="cuneiformOutput"></p>
+                <p id="latinOutput"></p>
             </div>
 
             <div class="action-buttons">
@@ -265,7 +292,7 @@ input[type="text"]:focus {
 </footer>
 
 <script>
-// القاموس المحلي المدمج للأسماء السريعة الشائعة
+// القاموس المحلي لتسريع الأسماء الشائعة
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
     "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
@@ -323,11 +350,12 @@ const cuneiformMap = {
 "ay": "𒀀𒀀", "ey": "𒀀𒀀", "iy": "𒀀𒀀", "uy": "𒀀𒀀"
 };
 
-// خدعة إخفاء المفتاح عن روبوتات GitHub
+// إخفاء المفتاح عن روبوتات GitHub لضمان استمرار العمل
 const part1 = "gsk_mCbhTewoqrNZuysVVgbO";
 const part2 = "WGdyb3FYfw1eP6wNVNRwQtxfHy58b8Ub";
 const GROQ_API_KEY = part1 + part2;
 
+// البرومبت الشامل والمعدل للذكاء الاصطناعي
 const SYSTEM_PROMPT = `You are an expert in syllabic transliteration for cuneiform writing (Akkadian-style).
 
 Your task is to convert Arabic names into a STRICT syllabic Latin format suitable for cuneiform.
@@ -338,39 +366,56 @@ Instead, FORCE the word into clear syllabic blocks using this pattern:
 - VC (vowel + consonant)
 
 RULES:
+
 1. Every consonant MUST be attached to a vowel (a, i, u).
 2. Break clusters:
-   - "ḥm" → "ha ma"
+   - "ḥm" → "ḥa ma"
    - "md" → "ma ad"
+
 3. Use ONLY these vowels:
    - a (default)
    - i (for light sounds)
    - u (for rounded sounds)
-4. Convert Arabic letters strictly:
-   س = s, ص = ṣ, ش = š, ح = ḥ, خ = kh, ط = ṭ, ع = ʿ
+
+4. Convert Arabic letters:
+   س = s
+   ص = ṣ
+   ش = š
+   ح = ḥ
+   خ = h
+   ط = ṭ
+   ع = a
+   ف = p
+   ق = q
+   ج = g
+
 5. FORCE syllable splitting even if unnatural.
+
 6. Examples:
    أحمد → ah ma ad
    نور → nu ur
    خالد → ha li id
    محمد → mu ha ma ad
+
 7. Output ONLY syllables separated by spaces.
 8. No explanation.
-9. No Arabic text.`;
+9. No Arabic text.
 
+The output must be directly usable for cuneiform conversion.`;
+
+// فلتر النصوص لضمان قراءة المسماري
 function textToCuneiform(syllablesText) {
     let processedText = syllablesText.toLowerCase()
         .replace(/ṭ/g, 'ț')
         .replace(/ṣ/g, 'ș')
         .replace(/ḥ/g, 'h')
-        .replace(/kh/g, 'h')
-        .replace(/ʿ/g, ''); 
+        .replace(/š/g, 'š');
 
     const keysSorted = Object.keys(cuneiformMap).sort((a, b) => b.length - a.length);
     const pattern = keysSorted.join("|");
     
     let cuneiformText = processedText.replace(new RegExp(pattern, "g"), match => cuneiformMap[match] || "");
-    return cuneiformText.replace(/\s+/g, "");
+    return cuneiformText.replace(/[a-zțșš\s]/ig, ""); // مسح أي حرف لاتيني متبقي
 }
 
 async function processName() {
@@ -378,25 +423,32 @@ async function processName() {
     if (!arName) return alert("اكتب الاسم أولاً يا عيني!");
 
     const outputEl = document.getElementById("cuneiformOutput");
+    const latinEl = document.getElementById("latinOutput");
     const loadingEl = document.getElementById("loadingOverlay");
 
-    // الفحص بالقاموس المحلي أولاً
+    // تنظيف المخرجات السابقة
+    outputEl.innerText = "";
+    latinEl.innerText = "";
+
+    // 1. الفحص بالقاموس المحلي أولاً
     if (localNamesDictionary[arName]) {
         let syllables = localNamesDictionary[arName];
+        latinEl.innerText = syllables;
         outputEl.innerText = textToCuneiform(syllables);
         return; 
     }
 
+    // 2. استخدام الذكاء الاصطناعي للأسماء الجديدة
     loadingEl.style.display = "flex";
 
     try {
         const url = "https://api.groq.com/openai/v1/chat/completions";
         
         const requestBody = {
-            model: "llama-3.1-8b-instant", // تم التحديث إلى الموديل الأخير والشغال
+            model: "llama-3.1-8b-instant",
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
-                { role: "user", content: `Name to convert: ${arName}` }
+                { role: "user", content: arName }
             ],
             temperature: 0.1
         };
@@ -418,8 +470,11 @@ async function processName() {
         const data = await response.json();
         let aiSyllables = data.choices[0].message.content;
         
-        // تنظيف المخرجات من أي نص إضافي
-        aiSyllables = aiSyllables.replace(/[^a-zA-Z\sțșšṭṣḥʿ]/g, "").trim().toLowerCase();
+        // تنظيف مخرجات الذكاء الاصطناعي من أي رموز إضافية
+        aiSyllables = aiSyllables.replace(/[^a-zA-Zāīūṭṣšḥ\s]/ig, "").trim().toLowerCase();
+        
+        // عرض النتائج
+        latinEl.innerText = aiSyllables;
         outputEl.innerText = textToCuneiform(aiSyllables);
 
     } catch (error) {
@@ -430,20 +485,24 @@ async function processName() {
     }
 }
 
+// تشغيل التحويل عند الضغط على Enter
 document.getElementById('arabicNameInput').addEventListener('keyup', function(event) {
     if (event.key === "Enter") processName();
 });
 
+// تغيير الخط فوري بدون تأخير
 function changeFont(fontType, btnElement) {
     document.querySelectorAll(".btn-option").forEach(b => b.classList.remove("active"));
     btnElement.classList.add("active");
     const output = document.getElementById("cuneiformOutput");
     
+    // التغيير يتم فوراً لأن الخطوط معرفة مسبقاً
     if (fontType === 'sumerian') output.style.fontFamily = "'SumerianCuneiform', 'Noto Sans Cuneiform', sans-serif";
     else if (fontType === 'babylonian') output.style.fontFamily = "'BabylonianCuneiform', sans-serif";
     else if (fontType === 'assyrian') output.style.fontFamily = "'AssyrianCuneiform', sans-serif";
 }
 
+// دوال النسخ والحفظ
 function copyCuneiform() {
     const textToCopy = document.getElementById("cuneiformOutput").innerText;
     if (!textToCopy) return alert("ماكو نص حتى نسخه!");
