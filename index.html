@@ -247,7 +247,7 @@ input[type="text"]:focus {
 </head>
 <body>
 
-<div id="loadingOverlay">جاري التحويل عبر الذكاء الاصطناعي... ⏳</div>
+<div id="loadingOverlay">جاري التحويل ... ⏳</div>
 
 <header class="site-header">
     <img src="logo.png" alt="AQY Logo" class="logo" />
@@ -263,8 +263,8 @@ input[type="text"]:focus {
         </div>
 
         <div class="options-section">
-            <button class="btn-option active" onclick="changeFont('sumerian', this)">سومري (قديم)</button>
-            <button class="btn-option" onclick="changeFont('babylonian', this)">بابلي (وسط)</button>
+            <button class="btn-option active" onclick="changeFont('sumerian', this)">سومري (الافتراضي)</button>
+            <button class="btn-option" onclick="changeFont('babylonian', this)">بابلي (قديم )</button>
             <button class="btn-option" onclick="changeFont('assyrian', this)">آشوري (حديث)</button>
         </div>
 
@@ -275,9 +275,9 @@ input[type="text"]:focus {
             </div>
 
             <div class="action-buttons">
-                <button class="btn-action btn-copy" onclick="copyCuneiform()">📋 نسخ النص</button>
-                <button class="btn-action btn-save" onclick="saveAsImage(false)">🖼️ حفظ مع الخلفية</button>
-                <button class="btn-action btn-save-transparent" onclick="saveAsImage(true)">🏁 حفظ شفاف</button>
+                <button class="btn-action btn-copy" onclick="copyCuneiform()"> نسخ النص</button>
+                <button class="btn-action btn-save" onclick="saveAsImage(false)">حفظ مع الخلفية</button>
+                <button class="btn-action btn-save-transparent" onclick="saveAsImage(true)"> حفظ شفاف</button>
             </div>
         </div>
     </div>
