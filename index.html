@@ -265,7 +265,7 @@ input[type="text"]:focus {
 </footer>
 
 <script>
-// القاموس المحلي المدمج
+// القاموس المحلي المدمج للأسماء السريعة الشائعة
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
     "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
@@ -393,7 +393,7 @@ async function processName() {
         const url = "https://api.groq.com/openai/v1/chat/completions";
         
         const requestBody = {
-            model: "llama3-8b-8192",
+            model: "llama-3.1-8b-instant", // تم التحديث إلى الموديل الأخير والشغال
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
                 { role: "user", content: `Name to convert: ${arName}` }
