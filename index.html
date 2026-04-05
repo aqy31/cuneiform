@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+/* تحميل الخطوط مسبقاً لضمان السرعة */
 @font-face { font-family: 'AssyrianCuneiform'; src: url('Assyrian.ttf') format('truetype'); font-display: swap; }
 @font-face { font-family: 'BabylonianCuneiform'; src: url('Babylonian.ttf') format('truetype'); font-display: swap; }
 @font-face { font-family: 'SumerianCuneiform'; src: local('Noto Sans Cuneiform'), url('Sumerian.ttf') format('truetype'); font-display: swap; }
@@ -44,11 +45,18 @@ input[type="text"]:focus { border-color: #ffcc00; outline: none; }
 .social-links a { color: #ffcc00; text-decoration: none; margin: 0 8px; transition: color 0.3s; }
 .social-links a:hover { color: white; }
 @media (max-width: 600px) { .main-container { padding: 20px 15px; } .input-section { flex-direction: column; width: 100%; } .btn-convert { width: 100%; justify-content: center; } .action-buttons { flex-direction: column; width: 100%; } .btn-action { width: 100%; justify-content: center; } }
+.preload-fonts { position: absolute; opacity: 0; pointer-events: none; user-select: none; z-index: -1; }
 </style>
 </head>
 <body>
 
-<div id="loadingOverlay">جاري التحويل ... ⏳</div>
+<div class="preload-fonts">
+    <span style="font-family: 'SumerianCuneiform';">A</span>
+    <span style="font-family: 'BabylonianCuneiform';">A</span>
+    <span style="font-family: 'AssyrianCuneiform';">A</span>
+</div>
+
+<div id="loadingOverlay">جاري التحويل عبر الذكاء الاصطناعي... ⏳</div>
 
 <header class="site-header">
     <img src="logo.png" alt="AQY Logo" class="logo" />
@@ -59,13 +67,13 @@ input[type="text"]:focus { border-color: #ffcc00; outline: none; }
         <h1>محول الأسماء العربية إلى مسمارية</h1>
 
         <div class="input-section">
-            <input type="text" id="arabicNameInput" placeholder="اكتب الاسم بالعربي هنا..." />
+            <input type="text" id="arabicNameInput" placeholder="اكتب الاسم بالعربي هنا (مثلاً: مصطفى)..." />
             <button class="btn-convert" onclick="processName()">توليد ⇄</button>
         </div>
 
         <div class="options-section">
-            <button class="btn-option active" onclick="changeFont('sumerian', this)">سومري (الافتراضي )</button>
-            <button class="btn-option" onclick="changeFont('babylonian', this)">بابلي (قديم )</button>
+            <button class="btn-option active" onclick="changeFont('sumerian', this)">سومري (قديم)</button>
+            <button class="btn-option" onclick="changeFont('babylonian', this)">بابلي (وسط)</button>
             <button class="btn-option" onclick="changeFont('assyrian', this)">آشوري (حديث)</button>
         </div>
 
@@ -76,9 +84,9 @@ input[type="text"]:focus { border-color: #ffcc00; outline: none; }
             </div>
 
             <div class="action-buttons">
-                <button class="btn-action btn-copy" onclick="copyCuneiform()"> نسخ النص</button>
-                <button class="btn-action btn-save" onclick="saveAsImage(false)"> حفظ مع الخلفية</button>
-                <button class="btn-action btn-save-transparent" onclick="saveAsImage(true)"> حفظ شفاف</button>
+                <button class="btn-action btn-copy" onclick="copyCuneiform()">📋 نسخ النص</button>
+                <button class="btn-action btn-save" onclick="saveAsImage(false)">🖼️ حفظ مع الخلفية</button>
+                <button class="btn-action btn-save-transparent" onclick="saveAsImage(true)">🏁 حفظ شفاف</button>
             </div>
         </div>
     </div>
@@ -93,14 +101,10 @@ input[type="text"]:focus { border-color: #ffcc00; outline: none; }
 </footer>
 
 <script>
-// القاموس المحلي لتسريع الأسماء وتصحيحها فوراً
+// القاموس المحلي
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
-    "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
-    "سجاد": "sa aj ja ad", "يوسف": "yu su up", "إبراهيم": "ib ra hi im", "ابراهيم": "ib ra hi im",
-    "سلطان": "su ul ța an", "شفيقة": "ša pi qa", "شفيقه": "ša pi qa", "هدبان": "ha ad ba an", 
-    "وضحة": "wa aț ha", "وضحه": "wa aț ha", "خلدون": "ha al du un", "قحطان": "qa ah ța an",
-    "سجى": "sa ga", "جمال": "ga ma al", "فيصل": "pi iṣ al"
+    "عائشة": "a i ša", "عائشه": "a i ša", "منير": "mu ni ir", "عمر": "u ma ar"
 };
 
 const cuneiformMap = {
@@ -139,49 +143,44 @@ const part1 = "gsk_mCbhTewoqrNZuysVVgbO";
 const part2 = "WGdyb3FYfw1eP6wNVNRwQtxfHy58b8Ub";
 const GROQ_API_KEY = part1 + part2;
 
-// البرومبت المعزز بالأمثلة اللي فشل بيها حتى يتأدب!
-const SYSTEM_PROMPT = `You are an automated transliteration API endpoint. Your ONLY job is to convert Arabic names to space-separated Latin syllables.
-DO NOT output any conversational text, explanations, or greetings. ONLY output the raw syllables.
+// البرومبت الهجين (الذكي باللفظ + الصارم بالقواعد)
+const SYSTEM_PROMPT = `You are an expert Arabic linguist and an automated Akkadian transliteration API.
+DO NOT output any conversational text. ONLY output the raw space-separated syllables.
 
-MAPPING RULES (NO EXCEPTIONS):
-- ف = p (NEVER f)
-- ج = g (NEVER j)
-- ش = š
-- ص = ṣ, ض = ṣ
-- ط = ṭ, ظ = ṭ
-- ح = h, خ = h, هـ = h
-- ث = t
-- ق = q
-- س = s
-- ع, ء, ا, ى, ة = a (or e, i, u depending on Harakat)
-- و = w (or u), ي = y (or i)
+STEP 1: PRONUNCIATION RECOGNITION (SMART RECOGNITION)
+You MUST identify the correct spoken pronunciation of the Arabic name, including its hidden vowels (Harakat). 
+- If the name is "منير", you MUST know it is pronounced "Munir" (starts with u), NOT "Manir".
+- If the name is "سلطان", you MUST know it is "Sultan" (starts with u).
+- If the name is "عمر", you MUST know it is "Umar".
+Use your natural linguistic knowledge to assign the correct implicit 'a', 'i', or 'u' to every consonant.
 
-RULES:
-1. NO STANDALONE CONSONANTS. Every consonant MUST have a vowel (CV or VC format).
-2. FORBIDDEN CLUSTERS: NEVER output closed clusters like "ban", "man", "dan". You MUST split them: "ban" -> "ba an", "man" -> "ma an", "dan" -> "da an".
-3. STRICT DICTIONARY: You can ONLY use these exact syllables:
+STEP 2: AKKADIAN MAPPING & SYLLABIFICATION (STRICT RULES)
+Convert the recognized pronunciation into strict syllables:
+- ث=t, ج=g, غ=g, ف=p, ش=š, ص=ṣ, ض=ṣ, ط=ṭ, ظ=ṭ, ح=h, خ=h, هـ=h, س=s, ق=q
+- ع, ء, ا, ى, ة = a/i/u
+- و=w/u, ي=y/i
+- NO STANDALONE CONSONANTS. Every consonant MUST have a vowel (CV or VC format). Break clusters (e.g., "ban" -> "ba an", "man" -> "ma an").
+- NO CONSECUTIVE VOWELS. e.g., عائشة -> a i ša.
+
+STEP 3: STRICT DICTIONARY FILTER
+You can ONLY output syllables that exactly match this list:
 [diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
 
-EXAMPLES TO MEMORIZE:
-Input: شفيقة
-Output: ša pi qa
+Input: منير
+Output: mu ni ir
 
 Input: سلطان
 Output: su ul ța an
 
-Input: هذبان
-Output: ha ad ba an
+Input: عائشة
+Output: a i ša
 
-Input: وضحة
-Output: wa aț ha
+Input: شفيقة
+Output: ša pi qa
 
 Input: خلدون
-Output: ha al du un
+Output: ha al du un`;
 
-Input: عبدالرحمن
-Output: ab du ul ra ah ma an`;
-
-// فلتر النصوص لضمان قراءة المسماري
 function textToCuneiform(syllablesText) {
     let processedText = syllablesText.toLowerCase()
         .replace(/ṭ/g, 'ț')
@@ -193,7 +192,7 @@ function textToCuneiform(syllablesText) {
     const pattern = keysSorted.join("|");
     
     let cuneiformText = processedText.replace(new RegExp(pattern, "g"), match => cuneiformMap[match] || "");
-    return cuneiformText.replace(/[a-zțșš\s]/ig, ""); // مسح أي حرف لاتيني متبقي
+    return cuneiformText.replace(/[a-zțșš\s]/ig, "");
 }
 
 async function processName() {
@@ -245,16 +244,16 @@ async function processName() {
         const data = await response.json();
         let aiSyllables = data.choices[0].message.content;
         
-        // الفلتر الحديدي: مسح كلمة Output وتصليح أي خطأ إملائي إجباري بالكود
+        // التنظيف الإجباري النهائي لأي خطأ محتمل
         aiSyllables = aiSyllables.replace(/output:/ig, "")
-            .replace(/f/ig, "p")  // إجبار تحويل أي f يكتبها الغبي إلى p
-            .replace(/j/ig, "g")  // إجبار تحويل أي j إلى g
+            .replace(/f/ig, "p") 
+            .replace(/j/ig, "g") 
             .replace(/v/ig, "w")
             .replace(/o/ig, "u")
             .replace(/e/ig, "i")
-            .replace(/([^a-z])ban\b/ig, "$1ba an") // تصليح مقطع ban
-            .replace(/([^a-z])man\b/ig, "$1ma an") // تصليح مقطع man
-            .replace(/([^a-z])dan\b/ig, "$1da an") // تصليح مقطع dan
+            .replace(/([^a-z])ban\b/ig, "$1ba an")
+            .replace(/([^a-z])man\b/ig, "$1ma an")
+            .replace(/([^a-z])dan\b/ig, "$1da an")
             .replace(/[^a-zA-Zāīūṭṣšḥ\sțș]/ig, "")
             .trim().toLowerCase();
         
