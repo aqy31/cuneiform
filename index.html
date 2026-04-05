@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+    <title>البوابة الرقمية للمسماريات - AI</title>
+    <style>
+        /* الخطوط الخاصة بك */
+        @font-face { font-family: 'Assyrian'; src: url('AssyrianFont.ttf'); }
+        @font-face { font-family: 'Babylonian'; src: url('BabylonianFont.ttf'); }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #f8fafc; 
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .premium-container { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); 
+            width: 100%;
+            max-width: 1000px; 
+            padding: 40px; 
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr; 
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .premium-container { grid-template-columns: 1fr 1fr; }
+            .header-section { grid-column: 1 / -1; text-align: center; margin-bottom: 20px; }
+        }
+
+        h1 { 
+            color: #fbbf24; 
+            font-size: clamp(24px, 4vw, 36px); 
+            margin: 0 0 10px 0;
+            /* تم إزالة اللمعان */
+        }
+        
+        p.subtitle { color: #94a3b8; font-size: 14px; margin-top: 0; }
+
+        .input-group { display: flex; flex-direction: column; gap: 15px; }
+        label { color: #cbd5e1; font-size: 14px; font-weight: bold; }
+
+        input[type="text"], select { 
+            padding: 18px; font-size: 18px; background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155; border-radius: 12px; color: #fff;
+            outline: none; transition: all 0.3s ease; width: 100%; box-sizing: border-box;
+        }
+        
+        input:focus, select:focus { border-color: #fbbf24; } /* تم إزالة اللمعان */
+
+        .btn-generate {
+            background-color: #fbbf24; color: #0f172a; padding: 18px;
+            font-size: 18px; font-weight: bold; border: none; border-radius: 12px;
+            cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-generate:hover { background-color: #f59e0b; }
+        .btn-generate:disabled { background-color: #64748b; cursor: not-allowed; }
+
+        .result-panel {
+            background: rgba(15, 23, 42, 0.8); border: 1px solid #334155;
+            border-radius: 15px; padding: 30px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative;
+        }
+
+        .cuneiform-text { 
+            font-size: clamp(25px, 5vw, 55px); /* تم تصغير الخط هنا */
+            color: #fbbf24; margin: 20px 0;
+            text-align: center; word-wrap: break-word; width: 100%;
+            /* تم إزالة اللمعان */
+        }
+
+        .syllables-text { font-size: 18px; color: #f87171; direction: ltr; font-weight: bold; letter-spacing: 3px; }
+        .loading-text { color: #38bdf8; font-weight: bold; font-size: 16px; display: none; }
+
+        .actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 20px; }
+        @media (min-width: 768px) { .actions { flex-direction: row; } }
+
+        button.action-btn { 
+            padding: 15px; font-size: 15px; border: none; border-radius: 10px; 
+            cursor: pointer; font-weight: bold; transition: all 0.3s ease; flex: 1;
+        }
+        .btn-copy { background-color: #334155; color: white; }
+        .btn-download { background-color: #059669; color: white; }
+        
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="premium-container">
+        <div class="header-section">
+            <h1>التوثيق الرقمي للمسماريات الذكي</h1>
+            <p class="subtitle">مدعوم بالذكاء الاصطناعي للتحليل الأكاديمي الدقيق</p>
+        </div>
+
+        <div class="input-group">
+            <div>
+                <label>الاسم المراد ترجمته:</label>
+                <input type="text" id="nameInput" placeholder="اكتب الاسم هنا...">
+            </div>
+            
+            <div>
+                <label>اختر الحقبة الزمنية (الخط):</label>
+                <select id="fontSelector" onchange="updateFont()">
+                    <option value="Sumerian">الخط السومري (الأساسي)</option>
+                    <option value="Assyrian">الخط الآشوري</option>
+                    <option value="Babylonian">الخط البابلي</option>
+                </select>
+            </div>
+
+            <button class="btn-generate" id="generateBtn" onclick="askAI()">تحليل وتوليد بالذكاء الاصطناعي 🧠</button>
+            <div id="loadingMsg" class="loading-text">جاري تحليل الاسم وتفكيك المقاطع... ⏳</div>
+        </div>
+
+        <div class="result-panel">
+            <div id="syllablesResult" class="syllables-text">...</div>
+            <div id="cuneiformResult" class="cuneiform-text">...</div>
+            
+            <div class="actions">
+                <button class="action-btn btn-copy" onclick="copyText()">📋 نسخ النص</button>
+                <button class="action-btn btn-download" onclick="downloadPNG(false)">🖼️ تحميل صورة فخمة</button>
+                <button class="action-btn btn-download" style="background-color: #2563eb;" onclick="downloadPNG(true)">🔲 تحميل شفافة</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="exportCanvas" width="4000" height="2500"></canvas>
+
+    <script>
+        let currentCuneiform = "";
+
+        function updateFont() {
+            let selectedFont = document.getElementById('fontSelector').value;
+            document.getElementById('cuneiformResult').style.fontFamily = selectedFont === "Sumerian" ? "sans-serif" : selectedFont;
+        }
+
+        async function askAI() {
+            const name = document.getElementById('nameInput').value.trim();
+            // تم إضافة المفتاح هنا بناء على طلبك
+            const apiKey = "AIzaSyClYpklA4wpQuee_Rk7Dzr5rHm5353hMCI"; 
+
+            if (!name) { alert("اكتب اسماً أولاً!"); return; }
+
+            const btn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loadingMsg');
+            
+            btn.disabled = true;
+            loading.style.display = "block";
+            document.getElementById('cuneiformResult').innerText = "...";
+            document.getElementById('syllablesResult').innerText = "...";
+
+            const promptText = `
+                أنت خبير أكاديمي في اللغات المسمارية القديمة (الأكدية والسومرية).
+                قم بتحليل هذا الاسم: "${name}"
+                1. قطّع الاسم إلى مقاطع صوتية لاتينية دقيقة كما تُكتب في الدراسات المسمارية (مثال: su-ul-ta-an أو nu-ur).
+                2. أعطني الرموز المسمارية الدقيقة المطابقة لها.
+                
+                يجب أن يكون ردك حصراً بهذا التنسيق وبدون أي كلمة أو شرح إضافي:
+                المقاطع اللاتينية | الرموز المسمارية
+            `;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if(data.error) {
+                    alert("حدث خطأ في الاتصال: " + data.error.message);
+                    return;
+                }
+
+                const aiResult = data.candidates[0].content.parts[0].text.trim();
+                const parts = aiResult.split('|');
+                
+                if (parts.length === 2) {
+                    const syllables = parts[0].trim().toUpperCase();
+                    currentCuneiform = parts[1].trim();
+
+                    document.getElementById('syllablesResult').innerText = syllables;
+                    document.getElementById('cuneiformResult').innerText = currentCuneiform;
+                    updateFont();
+                } else {
+                    alert("الذكاء الاصطناعي أعطى رداً غير متوقع، جرب مرة أخرى.");
+                }
+
+            } catch (error) {
+                alert("حدث خطأ في الاتصال بالذكاء الاصطناعي.");
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                loading.style.display = "none";
+            }
+        }
+
+        function copyText() {
+            if(!currentCuneiform) return;
+            navigator.clipboard.writeText(currentCuneiform).then(() => { alert("تم النسخ!"); });
+        }
+
+        function downloadPNG(isTransparent) {
+            if(!currentCuneiform) { alert("اطلب التوليد أولاً!"); return; }
+            const canvas = document.getElementById('exportCanvas');
+            const ctx = canvas.getContext('2d');
+            let selectedFont = document.getElementById('fontSelector').value;
+            let fontName = selectedFont === "Sumerian" ? "sans-serif" : selectedFont;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!isTransparent) {
+                let gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, "#0f172a");
+                gradient.addColorStop(1, "#1e293b");
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.strokeStyle = "#fbbf24";
+                ctx.lineWidth = 10;
+                ctx.strokeRect(150, 150, canvas.width - 300, canvas.height - 300);
+                
+                ctx.fillStyle = "#94a3b8";
+                ctx.font = "80px 'Segoe UI', Tahoma, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("سِجِلّ التوثيق الرقمي للمسماريات", canvas.width / 2, 350);
+            }
+
+            let baseFontSize = 700; 
+            ctx.font = baseFontSize + "px " + fontName;
+            let maxWidth = canvas.width - 600; 
+            while (ctx.measureText(currentCuneiform).width > maxWidth && baseFontSize > 150) {
+                baseFontSize -= 30;
+                ctx.font = baseFontSize + "px " + fontName;
+            }
+
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            // تم إزالة الظل (اللمعان) بالكامل من الصورة
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
+            
+            if (!isTransparent) {
+                ctx.fillStyle = "#fbbf24"; 
+            } else {
+                ctx.fillStyle = "#0f172a"; 
+            }
+            
+            ctx.fillText(currentCuneiform, canvas.width / 2, canvas.height / 2);
+
+            ctx.font = "bold 120px sans-serif";
+            ctx.fillStyle = isTransparent ? "#f87171" : "#f87171";
+            ctx.fillText(document.getElementById('syllablesResult').innerText, canvas.width / 2, (canvas.height / 2) + 500);
+
+            if (!isTransparent) {
+                let fontNameArabic = selectedFont === "Assyrian" ? "الخط الآشوري" : (selectedFont === "Babylonian" ? "الخط البابلي" : "الخط السومري");
+                ctx.font = "70px sans-serif";
+                ctx.fillStyle = "#64748b";
+                ctx.fillText("النمط المُستخدَم: " + fontNameArabic, canvas.width / 2, canvas.height - 300);
+            }
+
+            const link = document.createElement('a');
+            let safeName = document.getElementById('nameInput').value.trim().replace(/\s+/g, '_') || "Name";
+            link.download = 'AI_Cuneiform_' + safeName + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
