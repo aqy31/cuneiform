@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>البوابة الرقمية للمسماريات - AI V8</title>
+    <title>البوابة الرقمية للمسماريات - V9</title>
     <style>
-        /* الخطوط المسمارية المحلية الخاصة بك */
         @font-face { font-family: 'Assyrian'; src: url('AssyrianFont.ttf'); }
         @font-face { font-family: 'Babylonian'; src: url('BabylonianFont.ttf'); }
-
-        /* خط مسماري احتياطي نظيف من جوجل (بدون أخطاء الروابط) */
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Cuneiform&display=swap');
 
         body { 
@@ -46,12 +43,7 @@
             .header-section { grid-column: 1 / -1; text-align: center; margin-bottom: 20px; }
         }
 
-        h1 { 
-            color: #fbbf24; 
-            font-size: clamp(24px, 4vw, 36px); 
-            margin: 0 0 10px 0;
-        }
-        
+        h1 { color: #fbbf24; font-size: clamp(24px, 4vw, 36px); margin: 0 0 10px 0; }
         p.subtitle { color: #94a3b8; font-size: 14px; margin-top: 0; }
 
         .input-group { display: flex; flex-direction: column; gap: 15px; }
@@ -62,7 +54,6 @@
             border: 1px solid #334155; border-radius: 12px; color: #fff;
             outline: none; transition: all 0.3s ease; width: 100%; box-sizing: border-box;
         }
-        
         input:focus, select:focus { border-color: #fbbf24; }
 
         .btn-generate {
@@ -106,8 +97,8 @@
 
     <div class="premium-container">
         <div class="header-section">
-            <h1>التوثيق الرقمي للمسماريات الذكي</h1>
-            <p class="subtitle">تم ترويض الذكاء الاصطناعي للتحليل الأكاديمي الدقيق 100%</p>
+            <h1>التوثيق الرقمي للمسماريات</h1>
+            <p class="subtitle">تم تفعيل الجدار الناري الأكاديمي لمنع أخطاء الذكاء الاصطناعي</p>
         </div>
 
         <div class="input-group">
@@ -125,7 +116,7 @@
                 </select>
             </div>
 
-            <button class="btn-generate" id="generateBtn" onclick="askAI()">تحليل وتوليد بالذكاء الاصطناعي 🧠</button>
+            <button class="btn-generate" id="generateBtn" onclick="askAI()">تحليل وتوليد 🧠</button>
             <div id="loadingMsg" class="loading-text">جاري التحليل الأكاديمي الصارم... ⏳</div>
         </div>
 
@@ -146,14 +137,16 @@
     <script>
         let currentCuneiform = "";
 
-        // القاموس الأكاديمي للحالات التي يهذي بها الذكاء الاصطناعي
+        // القاموس الصارم (يشتغل فوراً للأسماء المشهورة بدون ما ننتظر هلوسة الـ AI)
         const strictDictionary = {
             "مصطفى": { syllables: "MU-US-TA-PA", cuneiform: "𒈬𒍑𒋫𒉺" },
             "عبدالرحمن": { syllables: "AB-DU-UR-RA-AH-MA-AN", cuneiform: "𒀊𒁺𒌫𒊏𒄴𒈠𒀭" },
             "سلطان": { syllables: "SU-UL-TA-AN", cuneiform: "𒋢𒌌𒋫𒀭" },
             "نور": { syllables: "NU-UR", cuneiform: "𒉡𒌫" },
             "احمد": { syllables: "AH-MA-AD", cuneiform: "𒄴𒈠𒀜" },
-            "محمد": { syllables: "MU-HA-AM-MA-AD", cuneiform: "𒈬𒄩𒄠𒈠𒀜" }
+            "محمد": { syllables: "MU-HA-AM-MA-AD", cuneiform: "𒈬𒄩𒄠𒈠𒀜" },
+            "علي": { syllables: "A-LI", cuneiform: "𒀀𒇷" },
+            "عمر": { syllables: "U-MA-AR", cuneiform: "𒌋𒈠𒅈" }
         };
 
         function updateFont() {
@@ -166,8 +159,8 @@
 
         async function askAI() {
             const name = document.getElementById('nameInput').value.trim();
-            // ضيف مفتاحك هنا
-            const apiKey = "ضع_المفتاح_هنا"; 
+            // تم دمج مفتاحك هنا مباشرة كما طلبت
+            const apiKey = "AIzaSyClYpklA4wpQuee_Rk7Dzr5rHm5353hMCI"; 
 
             if (!name) { alert("اكتب اسماً أولاً!"); return; }
 
@@ -179,7 +172,7 @@
             document.getElementById('cuneiformResult').innerText = "...";
             document.getElementById('syllablesResult').innerText = "...";
 
-            // فحص القاموس الصارم أولاً (يمنع الذكاء الاصطناعي من التدخل في الأسماء المعروفة بأخطائها)
+            // فحص القاموس الصارم أولاً
             if (strictDictionary[name]) {
                 document.getElementById('syllablesResult').innerText = strictDictionary[name].syllables;
                 currentCuneiform = strictDictionary[name].cuneiform;
@@ -190,17 +183,14 @@
                 return;
             }
 
-            // هندسة الأوامر الصارمة جداً لمنع الهلوسة باللغات الهندية أو وضع حركات زائدة
             const promptText = `
                 أنت خبير أكاديمي صارم في اللغات المسمارية (الأكدية والسومرية).
                 الاسم هو: "${name}"
                 
-                قواعد صارمة جداً (مخالفتها تعتبر فشلاً ذريعاً):
-                1. ممنوع منعاً باتاً إضافة حركات نهاية (مثل -nu أو -um) إذا لم تكن في أصل الاسم العربي.
-                2. ممنوع استخدام أي رمز من لغات أخرى (لا بنغالي، لا هندي، لا صيني). استخدم فقط وفقط الرموز من نطاق اليونيكود المسماري الصحيح (U+12000 إلى U+123FF).
-                3. الحروف العربية التي لا تقابلها أصوات مسمارية (ط، ف، ث، ح، ض) تُحول لأقرب مقطع (ط=ta، ف=pa، ح=ha، ث=sa).
-                
-                يجب أن يكون ردك حصراً بهذا التنسيق وبدون أي كلمة إضافية:
+                قواعد صارمة جداً:
+                1. استخدم المقاطع اللاتينية الأساسية فقط بدون حركات غريبة أو نقاط (استخدم S بدل Ṣ، و T بدل Ṭ).
+                2. ممنوع إضافة حركات نهاية (مثل -nu).
+                3. رد حصراً بهذا التنسيق وبدون أي كلمة إضافية:
                 المقاطع اللاتينية | الرموز المسمارية
             `;
 
@@ -227,8 +217,16 @@
                 
                 if (parts.length === 2) {
                     document.getElementById('syllablesResult').innerText = parts[0].trim().toUpperCase();
-                    // تنظيف النص من أي رمز خارج النطاق المسماري لتجنب الحروف البنغالية
-                    currentCuneiform = parts[1].trim();
+                    
+                    // الفلتر السحري: حذف أي حروف إنجليزية أو غريبة (مثل Duckworth)
+                    let rawCuneiform = parts[1].trim();
+                    // يسمح فقط بنطاق اليونيكود المسماري والمسافات
+                    currentCuneiform = rawCuneiform.replace(/[^\u12000-\u123FF\s]/g, '');
+                    
+                    if (currentCuneiform.length === 0 && rawCuneiform.length > 0) {
+                        currentCuneiform = "⚠️ تعذر إيجاد الرمز الصحيح";
+                    }
+
                     document.getElementById('cuneiformResult').innerText = currentCuneiform;
                     updateFont();
                 } else {
@@ -250,7 +248,7 @@
         }
 
         function downloadPNG(isTransparent) {
-            if(!currentCuneiform) { alert("اطلب التوليد أولاً!"); return; }
+            if(!currentCuneiform || currentCuneiform.includes("⚠️")) { alert("النتيجة غير صالحة للتحميل!"); return; }
             const canvas = document.getElementById('exportCanvas');
             const ctx = canvas.getContext('2d');
             let selectedFont = document.getElementById('fontSelector').value;
