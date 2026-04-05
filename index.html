@@ -224,7 +224,7 @@ input[type="text"]:focus {
 <div id="loadingOverlay">جاري التحويل عبر الذكاء الاصطناعي... ⏳</div>
 
 <header class="site-header">
-    <img src="logo.png" alt="AQY Logo" class="logo" onerror="this.src='https://via.placeholder.com/150x120?text=AQY+Logo'" />
+    <img src="logo.png" alt="AQY Logo" class="logo" />
 </header>
 
 <main>
@@ -265,7 +265,7 @@ input[type="text"]:focus {
 </footer>
 
 <script>
-// القاموس المحلي مدمج بالأسماء التي طلبتها لتقليل استهلاك الـ API
+// 1. القاموس المحلي مدمج به جميع الأسماء التي طلبتها لتعمل بسرعة وبدون VPN
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
     "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
@@ -286,10 +286,11 @@ const localNamesDictionary = {
     "سلمى": "sa al ma", "ليلى": "la ay la", "منى": "mu na", "سجا": "sa ja", "أصيل": "a și il", "اصيل": "a și il",
     "شيماء": "ši ma", "زينة": "zi na", "لبنى": "lu ub na", "رنا": "ra na", "ضحى": "du ha", "سميرة": "sa mi ra",
     "وفاء": "wa pa", "نهى": "nu ha", "هديل": "ha di il", "ميساء": "ma ay sa", "روعة": "raw a", "بان": "ba an",
-    "دلال": "da la al", "رؤى": "ru a", "بيداء": "ba ay da", "إيلاف": "i la ap", "ايلاف": "i la ap"
+    "دلال": "da la al", "رؤى": "ru a", "بيداء": "ba ay da", "إيلاف": "i la ap", "ايلاف": "i la ap",
+    "سلطان": "su ul ța an", "عثمان": "u ut ma an", "عمران": "u um ra an"
 };
 
-// قاموس المقاطع المسمارية
+// 2. قاموس المقاطع المسمارية
 const cuneiformMap = {
 "diš": "𒁹", "mí": "𒊩", "ba": "𒁀", "be": "𒁁", "bi": "𒁉", "bu": "𒁍", "pu": "𒁍", 
 "ab": "𒀊", "ap": "𒀊", "eb": "𒅁", "ib": "𒅁", "ep": "𒅁", "ip": "𒅁", "ub": "𒌒", "up": "𒌒", 
@@ -324,7 +325,6 @@ const cuneiformMap = {
 
 const GEMINI_API_KEY = "AIzaSyAoRRMyoRUVHWmEfTTBrx3lB2-JoADfVp0";
 
-// البرومبت الخاص بك مضبوط بشكل دقيق
 const SYSTEM_PROMPT = `You are an expert in syllabic transliteration for cuneiform writing (Akkadian-style).
 
 Your task is to convert Arabic names into a STRICT syllabic Latin format suitable for cuneiform.
@@ -339,21 +339,35 @@ RULES:
 2. Break clusters:
    - "ḥm" → "ha ma"
    - "md" → "ma ad"
-3. Use ONLY these vowels: a (default), i (for light sounds), u (for rounded sounds).
+3. Use ONLY these vowels:
+   - a (default)
+   - i (for light sounds)
+   - u (for rounded sounds)
 4. Convert Arabic letters strictly:
-   س = s, ص = ṣ, ش = š, ح = ḥ, خ = kh, ط = ṭ, ع = ʿ
+   س = s
+   ص = ṣ
+   ش = š
+   ح = ḥ
+   خ = kh
+   ط = ṭ
+   ع = ʿ
 5. FORCE syllable splitting even if unnatural.
-6. Output ONLY syllables separated by spaces.
-7. No explanation. No Arabic text.`;
+6. Examples:
+   أحمد → ah ma ad
+   نور → nu ur
+   خالد → ha li id
+   محمد → mu ha ma ad
+7. Output ONLY syllables separated by spaces.
+8. No explanation.
+9. No Arabic text.`;
 
 function textToCuneiform(syllablesText) {
-    // توحيد الحروف الخاصة لتتطابق مع القاموس المسماري (مثلاً: ṭ تصبح ț)
     let processedText = syllablesText.toLowerCase()
         .replace(/ṭ/g, 'ț')
         .replace(/ṣ/g, 'ș')
         .replace(/ḥ/g, 'h')
         .replace(/kh/g, 'h')
-        .replace(/ʿ/g, ''); // تجاهل حرف العين لأنه غير موجود في المسماري المباشر
+        .replace(/ʿ/g, ''); 
 
     const keysSorted = Object.keys(cuneiformMap).sort((a, b) => b.length - a.length);
     const pattern = keysSorted.join("|");
@@ -369,24 +383,22 @@ async function processName() {
     const outputEl = document.getElementById("cuneiformOutput");
     const loadingEl = document.getElementById("loadingOverlay");
 
-    // 1. البحث في القاموس أولاً لتوفير حصة الـ API وتجنب الانتظار
+    // فحص القاموس المحلي أولاً
     if (localNamesDictionary[arName]) {
         let syllables = localNamesDictionary[arName];
         outputEl.innerText = textToCuneiform(syllables);
         return; 
     }
 
-    // 2. إذا لم يكن بالقاموس، نستخدم الذكاء الاصطناعي
+    // إذا الاسم جديد وما موجود بالقاموس، نستخدم الـ API
     loadingEl.style.display = "flex";
 
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const fullPrompt = `${SYSTEM_PROMPT}\n\nName to convert: ${arName}`;
         
         const requestBody = {
-            systemInstruction: {
-                parts: [{ text: SYSTEM_PROMPT }]
-            },
-            contents: [{ parts: [{ text: `Name to convert: ${arName}` }] }]
+            contents: [{ parts: [{ text: fullPrompt }] }]
         };
 
         const response = await fetch(url, {
@@ -396,8 +408,7 @@ async function processName() {
         });
 
         if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`API Error ${response.status}: ${errText}`);
+            throw new Error(`API Error ${response.status}`);
         }
 
         const data = await response.json();
@@ -405,14 +416,14 @@ async function processName() {
 
         let aiSyllables = data.candidates[0].content.parts[0].text;
         
-        // إصلاح الفلتر: السماح للأحرف الخاصة التي يولدها الذكاء الاصطناعي بالمرور
+        // تنظيف المخرجات للإبقاء على الحروف والمسافات المطلوبة فقط
         aiSyllables = aiSyllables.replace(/[^a-zA-Z\sțșšṭṣḥʿ]/g, "").trim().toLowerCase();
-
         outputEl.innerText = textToCuneiform(aiSyllables);
 
     } catch (error) {
-        console.error("تفاصيل الخطأ الدقيقة:", error);
-        alert("صار خطأ بالاتصال! (تأكد من اتصالك بالإنترنت أو أن مفتاح الـ API يعمل).");
+        console.error("خطأ:", error);
+        // رسالة الخطأ توضح للمستخدم العراقي أن المشكلة هي حجب الخدمة وتحتاج VPN
+        alert("🚨 صار خطأ بالاتصال بالذكاء الاصطناعي!\n\nهذا الاسم يحتاج توليد جديد، وخدمات Google محجوبة في العراق.\nيرجى تشغيل تطبيق (VPN) والمحاولة مرة أخرى.");
     } finally {
         loadingEl.style.display = "none";
     }
