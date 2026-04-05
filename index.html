@@ -350,38 +350,40 @@ const cuneiformMap = {
 "ay": "𒀀𒀀", "ey": "𒀀𒀀", "iy": "𒀀𒀀", "uy": "𒀀𒀀"
 };
 
-// إخفاء المفتاح عن روبوتات GitHub لضمان استمرار العمل
+// إخفاء المفتاح عن روبوتات GitHub
 const part1 = "gsk_mCbhTewoqrNZuysVVgbO";
 const part2 = "WGdyb3FYfw1eP6wNVNRwQtxfHy58b8Ub";
 const GROQ_API_KEY = part1 + part2;
 
-// البرومبت البرمجي الصارم والمحدث للذكاء الاصطناعي
-const SYSTEM_PROMPT = `You are a strict text-processing machine. You do NOT process words naturally; you execute a character-by-character algorithmic conversion to Akkadian syllables.
+// البرومبت البرمجي الصارم كواجهة برمجة تطبيقات (API Endpoint)
+const SYSTEM_PROMPT = `You are an automated transliteration API endpoint. Your ONLY job is to convert Arabic names to space-separated Latin syllables.
+DO NOT output any conversational text, explanations, steps, or greetings. ONLY output the raw syllables.
 
-ALGORITHM TO EXECUTE INTERNALLY FOR EVERY INPUT:
-
-STEP 1: DECONSTRUCT
-Break the Arabic name into individual letters. Count them. EVERY SINGLE LETTER must survive the conversion process. Deletions are strictly prohibited.
-
-STEP 2: MAP CONSONANTS
-Map each Arabic letter to its Latin equivalent:
+MAPPING:
 - ث=t, ج=g, غ=g, ف=p, ش=š, ص=ṣ, ض=ṣ, ط=ṭ, ظ=ṭ, ح=h, خ=h, هـ=h, س=s, ق=q
 - ع, ء, ا, ى, ة = a (or e, i, u)
 - و=w/u, ي=y/i
-- All other letters map normally (م=m, ل=l, ن=n, د=d, ب=b, ر=r, ك=k, etc.)
 
-STEP 3: FORCE SYLLABIFICATION
-Analyze every mapped consonant. Does it have a vowel attached? 
-- If YES: Form a valid CV (Consonant-Vowel) syllable.
-- If NO (it is a silent/Sukun letter like 'ل' or 'ن' in the middle or end): You MUST attach a vowel to it to form a VC (Vowel-Consonant) or CV syllable (e.g., 'l' MUST become 'al', 'el', 'il', 'ul', 'la', 'li', or 'lu'). 
-
-STEP 4: FILTER THROUGH ALLOWED DICTIONARY ONLY
-Every generated syllable MUST perfectly match an entry in this list. No exceptions.
+RULES:
+1. NO STANDALONE CONSONANTS. Every consonant MUST have a vowel (CV or VC format).
+2. Silent consonants (Sukun) MUST survive. Attach a vowel to them (e.g., ل -> al/el/il/ul, ن -> an/en/in/un).
+3. STRICT DICTIONARY: You can ONLY use these exact syllables:
 [diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
 
-STEP 5: OUTPUT GENERATION
-Output ONLY the final space-separated syllables. 
-NO explanations. NO Arabic text. NO greetings. NO missing consonants.`;
+Input: خلدون
+Output: ha al du un
+
+Input: قحطان
+Output: qa ah ța an
+
+Input: سجى
+Output: sa ga
+
+Input: مشاعل
+Output: ma ša il
+
+Input: عبدالرحمن
+Output: ab du ul ra ah ma an`;
 
 // فلتر النصوص لضمان قراءة المسماري
 function textToCuneiform(syllablesText) {
@@ -428,7 +430,7 @@ async function processName() {
             model: "llama-3.1-8b-instant",
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
-                { role: "user", content: arName }
+                { role: "user", content: `Input: ${arName}\nOutput:` }
             ],
             temperature: 0.1
         };
@@ -450,8 +452,8 @@ async function processName() {
         const data = await response.json();
         let aiSyllables = data.choices[0].message.content;
         
-        // تنظيف مخرجات الذكاء الاصطناعي من أي رموز إضافية
-        aiSyllables = aiSyllables.replace(/[^a-zA-Zāīūṭṣšḥ\s]/ig, "").trim().toLowerCase();
+        // مسح كلمة Output إذا أرجعها الذكاء الاصطناعي بالخطأ، ثم التنظيف
+        aiSyllables = aiSyllables.replace(/output:/ig, "").replace(/[^a-zA-Zāīūṭṣšḥ\s]/ig, "").trim().toLowerCase();
         
         // عرض النتائج
         latinEl.innerText = aiSyllables;
