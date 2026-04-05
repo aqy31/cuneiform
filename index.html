@@ -294,7 +294,27 @@ input[type="text"]:focus {
 <script>
 // القاموس المحلي لتسريع الأسماء الشائعة
 const localNamesDictionary = {
-    
+    "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
+    "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
+    "سجاد": "sa aj ja ad", "كرار": "ka ar ra ar", "مرتضى": "mu ur ța da", "يوسف": "yu su up", "إبراهيم": "ib ra hi im",
+    "ابراهيم": "ib ra hi im", "عبد الله": "ab du ul la", "عبدالله": "ab du ul la", "قاسم": "qa si im", "مهدي": "ma ah di",
+    "منتظر": "mu un ta za ar", "صادق": "șa di iq", "محمود": "ma ah mu ud", "زيد": "za ay id", "سيف": "sa ay ip",
+    "ليث": "la ay it", "أمير": "a mi ir", "امير": "a mi ir", "رضا": "ri da", "باقر": "ba qi ir", "جواد": "ja wa ad",
+    "كاظم": "ka zi im", "جاسم": "ja si im", "حمزة": "ha am za", "طه": "ța ha", "عمار": "am ma ar", "ياسر": "ya si ir",
+    "هشام": "hi ša am", "فراس": "pi ra as", "طارق": "ța ri iq", "سعد": "sa a ad", "وليد": "wa li id", "خالد": "ha li id",
+    "رائد": "ra it", "عقيل": "a qi il", "هادي": "ha di", "مجيد": "ma ji id", "سلمان": "sa al ma an", "غيث": "gi it",
+    "أوس": "aw us", "اوس": "aw us", "عبد الرحمن": "ab du ur ra ah ma an", "عبدالرحمن": "ab du ur ra ah ma an",
+    "يحيى": "yah ya", "عادل": "a di il", "بهاء": "ba ha", "فاطمة": "pa ți ma", "زهراء": "za ah ra", "زينب": "za ay na ab",
+    "مريم": "ma ar ya am", "نور": "nu ur", "هدى": "hu da", "آية": "a ya", "اية": "a ya", "رقية": "ru qa ya",
+    "بنين": "ba ni in", "حوراء": "hu ur ra", "شهد": "ša ah ad", "تبارك": "ta ba ra ak", "رسل": "ru su ul",
+    "طيبة": "ța yi ba", "نبأ": "na ba", "نبا": "na ba", "حنين": "ha ni in", "ريام": "ri ya am", "سارة": "sa ra",
+    "دعاء": "du a", "إسراء": "is ra", "اسراء": "is ra", "فرح": "pa ra ah", "مروة": "ma ar wa", "صفا": "șa pa",
+    "ريم": "ri im", "غفران": "gu up ra an", "هند": "hi in ad", "داليا": "da li ya", "مها": "ma ha", "ندى": "na da",
+    "سلمى": "sa al ma", "ليلى": "la ay la", "منى": "mu na", "سجا": "sa ga", "أصيل": "a și il", "اصيل": "a și il",
+    "شيماء": "ši ma", "زينة": "zi na", "لبنى": "lu ub na", "رنا": "ra na", "ضحى": "du ha", "سميرة": "sa mi ra",
+    "وفاء": "wa pa", "نهى": "nu ha", "هديل": "ha di il", "ميساء": "ma ay sa", "روعة": "raw a", "بان": "ba an",
+    "دلال": "da la al", "رؤى": "ru a", "بيداء": "ba ay da", "إيلاف": "i la ap", "ايلاف": "i la ap",
+    "سلطان": "su ul ța an", "عثمان": "u ut ma an", "عمران": "u um ra an"
 };
 
 // قاموس المقاطع المسمارية
@@ -335,47 +355,33 @@ const part1 = "gsk_mCbhTewoqrNZuysVVgbO";
 const part2 = "WGdyb3FYfw1eP6wNVNRwQtxfHy58b8Ub";
 const GROQ_API_KEY = part1 + part2;
 
-// البرومبت الشامل والمعدل للذكاء الاصطناعي بناءً على طلبك
-const SYSTEM_PROMPT = `You are an expert computational linguist specializing in Akkadian cuneiform syllabary. 
-Your ONLY task is to transliterate Arabic names into a STRICT sequence of Latin syllables.
+// البرومبت البرمجي الصارم والمحدث للذكاء الاصطناعي
+const SYSTEM_PROMPT = `You are a strict text-processing machine. You do NOT process words naturally; you execute a character-by-character algorithmic conversion to Akkadian syllables.
 
-CRITICAL RULES & PHONETIC MAPPINGS:
-1. Map Arabic letters to Akkadian equivalents as follows:
-   - ث -> t
-   - ج, غ -> g
-   - ف -> p
-   - ش -> š
-   - ص, ض -> ṣ
-   - ط, ظ -> ṭ
-   - ح, خ, هـ -> h
-   - س -> s
-   - ق -> q
-   - ع, ء, ا, ى, ة -> a (or e, i, u depending on vocal flow)
-   - و -> w (or u)
-   - ي -> y (or i)
+ALGORITHM TO EXECUTE INTERNALLY FOR EVERY INPUT:
 
-2. SYLLABLE STRUCTURE:
-   - Break all names into basic blocks: CV (Consonant-Vowel) or VC (Vowel-Consonant).
-   - NEVER output a standalone consonant. Every consonant MUST have a vowel attached.
-   - Force syllable splitting even if it sounds unnatural in Arabic. Break clusters completely.
+STEP 1: DECONSTRUCT
+Break the Arabic name into individual letters. Count them. EVERY SINGLE LETTER must survive the conversion process. Deletions are strictly prohibited.
 
-3. THE ALLOWED DICTIONARY (STRICT):
-   You are FORBIDDEN from using any syllable that is not in this exact list. If a direct match doesn't exist, use the closest phonetic match from this list ONLY:
-   [diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
+STEP 2: MAP CONSONANTS
+Map each Arabic letter to its Latin equivalent:
+- ث=t, ج=g, غ=g, ف=p, ش=š, ص=ṣ, ض=ṣ, ط=ṭ, ظ=ṭ, ح=h, خ=h, هـ=h, س=s, ق=q
+- ع, ء, ا, ى, ة = a (or e, i, u)
+- و=w/u, ي=y/i
+- All other letters map normally (م=m, ل=l, ن=n, د=d, ب=b, ر=r, ك=k, etc.)
 
-4. EXAMPLES OF EXPECTED BEHAVIOR:
-   - سجى -> sa ga
-   - مشاعل -> ma ša il
-   - عبدالرحمن -> ab du ul ra ah ma an
-   - حفصة -> ha pa ṣa
-   - محمد -> mu ha ma ad
-   - احمد -> ah ma ad
+STEP 3: FORCE SYLLABIFICATION
+Analyze every mapped consonant. Does it have a vowel attached? 
+- If YES: Form a valid CV (Consonant-Vowel) syllable.
+- If NO (it is a silent/Sukun letter like 'ل' or 'ن' in the middle or end): You MUST attach a vowel to it to form a VC (Vowel-Consonant) or CV syllable (e.g., 'l' MUST become 'al', 'el', 'il', 'ul', 'la', 'li', or 'lu'). 
 
-5. OUTPUT FORMAT:
-   - Output ONLY the final space-separated syllables.
-   - NO Arabic text.
-   - NO formatting.
-   - NO explanations or greetings.`;
+STEP 4: FILTER THROUGH ALLOWED DICTIONARY ONLY
+Every generated syllable MUST perfectly match an entry in this list. No exceptions.
+[diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
+
+STEP 5: OUTPUT GENERATION
+Output ONLY the final space-separated syllables. 
+NO explanations. NO Arabic text. NO greetings. NO missing consonants.`;
 
 // فلتر النصوص لضمان قراءة المسماري
 function textToCuneiform(syllablesText) {
