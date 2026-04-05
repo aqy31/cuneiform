@@ -319,41 +319,34 @@ const cuneiformMap = {
 "ze": "𒍣", "zi": "𒍣", "zu": "𒍪", 
 "ta": "𒋫", "te": "𒁲", "ti": "𒋾", "tu": "𒌅", 
 "ya": "𒅀", "ye": "𒅀", "yi": "𒅀", "yu": "𒅀", 
-"ay": "𒀀𒀀", "ey": "𒀀𒀀", "iy": "𒀀𒀀", "uy": "𒀀𒀀",
-"ș": "", "ṭ": "", "ḥ": "", "ʿ": "" // لتنظيف الحروف الزائدة من الذكاء الاصطناعي إن وجدت
+"ay": "𒀀𒀀", "ey": "𒀀𒀀", "iy": "𒀀𒀀", "uy": "𒀀𒀀"
 };
 
-// إعدادات الذكاء الاصطناعي (Gemini API)
 const GEMINI_API_KEY = "AIzaSyAoRRMyoRUVHWmEfTTBrx3lB2-JoADfVp0";
 const SYSTEM_PROMPT = `You are an expert in syllabic transliteration for cuneiform writing (Akkadian-style).
-Your task is to convert Arabic names into a STRICT syllabic Latin format suitable for cuneiform.
-IMPORTANT: Do NOT produce natural pronunciation.
-Instead, FORCE the word into clear syllabic blocks using this pattern: CV or VC.
+Convert Arabic names into STRICT syllabic Latin format.
 RULES:
 1. Every consonant MUST be attached to a vowel (a, i, u).
-2. Break clusters: "ḥm" -> "ḥa ma", "md" -> "ma ad".
-3. Use ONLY these vowels: a, i, u.
-4. Convert Arabic letters: س=s, ص=ș, ش=š, ح=h, خ=h, ط=ț, ع=a.
-5. FORCE syllable splitting even if unnatural.
-6. Output ONLY syllables separated by spaces.
-7. No explanation. No Arabic text.`;
+2. Break clusters: "ḥm" -> "ha ma", "md" -> "ma ad".
+3. Use ONLY standard english vowels (a, i, u). No accents.
+4. Convert Arabic letters strictly.
+5. FORCE syllable splitting.
+6. Output ONLY syllables separated by spaces. No markdown, no quotes, no explanations.`;
 
-// دالة التحويل من الإنجليزي للمسماري
 function textToCuneiform(syllablesText) {
-    let syllables = syllablesText.toLowerCase().replace(/[ʿḥṭṣ]/g, match => {
-        // تنظيف مخرجات الـ AI لتتوافق مع القاموس
-        const map = {'ʿ': 'a', 'ḥ': 'h', 'ṭ': 'ț', 'ṣ': 'ș'};
-        return map[match] || match;
-    });
+    let syllables = syllablesText.toLowerCase();
 
+    // ترتيب المفاتيح من الأطول للأقصر لتجنب التداخل
     const keysSorted = Object.keys(cuneiformMap).sort((a, b) => b.length - a.length);
     const pattern = keysSorted.join("|");
     
+    // التحويل إلى مسماري
     let cuneiformText = syllables.replace(new RegExp(pattern, "g"), match => cuneiformMap[match] || "");
-    return cuneiformText.replace(/\s+/g, ""); // إزالة المسافات
+    
+    // مسح المسافات النهائية
+    return cuneiformText.replace(/\s+/g, "");
 }
 
-// الدالة الرئيسية للبحث والاتصال بالذكاء الاصطناعي
 async function processName() {
     let arName = document.getElementById("arabicNameInput").value.trim();
     if (!arName) return alert("اكتب الاسم أولاً يا عيني!");
@@ -361,21 +354,24 @@ async function processName() {
     const outputEl = document.getElementById("cuneiformOutput");
     const loadingEl = document.getElementById("loadingOverlay");
 
-    // 1. البحث في القاموس المحلي أولاً (للسرعة)
+    // 1. البحث في القاموس أولاً
     if (localNamesDictionary[arName]) {
         let syllables = localNamesDictionary[arName];
         outputEl.innerText = textToCuneiform(syllables);
         return; 
     }
 
-    // 2. إذا لم يكن موجوداً، نستخدم الذكاء الاصطناعي
+    // 2. إذا لم يكن بالقاموس، نستخدم الذكاء الاصطناعي
     loadingEl.style.display = "flex";
 
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        
+        // دمج الأمر مع الاسم لتفادي أخطاء الـ API
+        const fullPrompt = `${SYSTEM_PROMPT}\n\nName to convert: ${arName}`;
+        
         const requestBody = {
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: [{ parts: [{ text: arName }] }]
+            contents: [{ parts: [{ text: fullPrompt }] }]
         };
 
         const response = await fetch(url, {
@@ -384,16 +380,24 @@ async function processName() {
             body: JSON.stringify(requestBody)
         });
 
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`API Error ${response.status}: ${errText}`);
+        }
+
         const data = await response.json();
-        
         if (data.error) throw new Error(data.error.message);
 
-        let aiSyllables = data.candidates[0].content.parts[0].text.trim();
+        let aiSyllables = data.candidates[0].content.parts[0].text;
+        
+        // 🔥 الفلتر الصارم: مسح أي شيء عدا الحروف الإنجليزية والمسافات 🔥
+        aiSyllables = aiSyllables.replace(/[^a-zA-Z\s]/g, "").trim().toLowerCase();
+
         outputEl.innerText = textToCuneiform(aiSyllables);
 
     } catch (error) {
-        console.error("API Error:", error);
-        alert("صار خطأ بالاتصال بالذكاء الاصطناعي! حاول مرة ثانية.");
+        console.error("تفاصيل الخطأ الدقيقة:", error);
+        alert("صار خطأ بالاتصال! (اضغط F12 وشوف الـ Console لمعرفة السبب).");
     } finally {
         loadingEl.style.display = "none";
     }
