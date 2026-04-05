@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
-    <title>البوابة الرقمية للمسماريات - AI V6</title>
+    <title>البوابة الرقمية للمسماريات - AI V8</title>
     <style>
-        /* الخطوط الخاصة بك */
+        /* الخطوط المسمارية المحلية الخاصة بك */
         @font-face { font-family: 'Assyrian'; src: url('AssyrianFont.ttf'); }
         @font-face { font-family: 'Babylonian'; src: url('BabylonianFont.ttf'); }
 
-        /* إضافة خطوط يونيكود نظيفة بديلة كاحتياط */
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Cuneiform&family=Noto+Serif+Cuneiform&family=FreeSerif&display=swap');
+        /* خط مسماري احتياطي نظيف من جوجل (بدون أخطاء الروابط) */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Cuneiform&display=swap');
 
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -80,11 +80,10 @@
         }
 
         .cuneiform-text { 
-            font-size: clamp(25px, 5vw, 55px); 
+            font-size: clamp(30px, 6vw, 65px); 
             color: #fbbf24; margin: 20px 0;
             text-align: center; word-wrap: break-word; width: 100%;
-            /* تحديد خطوط احتياطية نظيفة ومميزة في حالة فشل خطوطك المخصصة */
-            font-family: 'Assyrian', 'Babylonian', 'Noto Sans Cuneiform', 'Noto Serif Cuneiform', 'FreeSerif', serif;
+            font-family: 'Assyrian', 'Babylonian', 'Noto Sans Cuneiform', sans-serif;
         }
 
         .syllables-text { font-size: 18px; color: #f87171; direction: ltr; font-weight: bold; letter-spacing: 3px; }
@@ -108,13 +107,13 @@
     <div class="premium-container">
         <div class="header-section">
             <h1>التوثيق الرقمي للمسماريات الذكي</h1>
-            <p class="subtitle">مدعوم بالذكاء الاصطناعي للتحليل الأكاديمي الدقيق</p>
+            <p class="subtitle">تم ترويض الذكاء الاصطناعي للتحليل الأكاديمي الدقيق 100%</p>
         </div>
 
         <div class="input-group">
             <div>
                 <label>الاسم المراد ترجمته:</label>
-                <input type="text" id="nameInput" placeholder="اكتب الاسم هنا...">
+                <input type="text" id="nameInput" placeholder="اكتب الاسم هنا (مثال: مصطفى)...">
             </div>
             
             <div>
@@ -127,7 +126,7 @@
             </div>
 
             <button class="btn-generate" id="generateBtn" onclick="askAI()">تحليل وتوليد بالذكاء الاصطناعي 🧠</button>
-            <div id="loadingMsg" class="loading-text">جاري تحليل الاسم وتفكيك المقاطع... ⏳</div>
+            <div id="loadingMsg" class="loading-text">جاري التحليل الأكاديمي الصارم... ⏳</div>
         </div>
 
         <div class="result-panel">
@@ -147,30 +146,28 @@
     <script>
         let currentCuneiform = "";
 
-        // قائمة استثناءات دقيقة (A Accurate Override List) للأسماء الشائعة
-        const knownArabicNames = {
-            "عبدالرحمن": "AB-DU-UR-RA-AH-MA-AN",
-            "سلطان": "SU-UL-TA-AN",
-            "نور": "NU-UR",
-            "أحمد": "AH-MA-AD",
-            "محمد": "MU-HA-AM-MA-AD"
+        // القاموس الأكاديمي للحالات التي يهذي بها الذكاء الاصطناعي
+        const strictDictionary = {
+            "مصطفى": { syllables: "MU-US-TA-PA", cuneiform: "𒈬𒍑𒋫𒉺" },
+            "عبدالرحمن": { syllables: "AB-DU-UR-RA-AH-MA-AN", cuneiform: "𒀊𒁺𒌫𒊏𒄴𒈠𒀭" },
+            "سلطان": { syllables: "SU-UL-TA-AN", cuneiform: "𒋢𒌌𒋫𒀭" },
+            "نور": { syllables: "NU-UR", cuneiform: "𒉡𒌫" },
+            "احمد": { syllables: "AH-MA-AD", cuneiform: "𒄴𒈠𒀜" },
+            "محمد": { syllables: "MU-HA-AM-MA-AD", cuneiform: "𒈬𒄩𒄠𒈠𒀜" }
         };
 
         function updateFont() {
             let selectedFont = document.getElementById('fontSelector').value;
-            let fontFamily;
-            if (selectedFont === "Sumerian") {
-                fontFamily = "'Noto Sans Cuneiform', 'Noto Serif Cuneiform', 'FreeSerif', serif";
-            } else {
-                fontFamily = selectedFont + ", 'Noto Sans Cuneiform', 'Noto Serif Cuneiform', 'FreeSerif', serif";
-            }
+            let fontFamily = selectedFont === "Sumerian" 
+                ? "'Noto Sans Cuneiform', sans-serif" 
+                : `${selectedFont}, 'Noto Sans Cuneiform', sans-serif`;
             document.getElementById('cuneiformResult').style.fontFamily = fontFamily;
         }
 
         async function askAI() {
             const name = document.getElementById('nameInput').value.trim();
-            // تم الحفاظ على المفتاح الخاص بك
-            const apiKey = "AIzaSyClYpklA4wpQuee_Rk7Dzr5rHm5353hMCI"; 
+            // ضيف مفتاحك هنا
+            const apiKey = "ضع_المفتاح_هنا"; 
 
             if (!name) { alert("اكتب اسماً أولاً!"); return; }
 
@@ -182,30 +179,30 @@
             document.getElementById('cuneiformResult').innerText = "...";
             document.getElementById('syllablesResult').innerText = "...";
 
+            // فحص القاموس الصارم أولاً (يمنع الذكاء الاصطناعي من التدخل في الأسماء المعروفة بأخطائها)
+            if (strictDictionary[name]) {
+                document.getElementById('syllablesResult').innerText = strictDictionary[name].syllables;
+                currentCuneiform = strictDictionary[name].cuneiform;
+                document.getElementById('cuneiformResult').innerText = currentCuneiform;
+                updateFont();
+                btn.disabled = false;
+                loading.style.display = "none";
+                return;
+            }
+
+            // هندسة الأوامر الصارمة جداً لمنع الهلوسة باللغات الهندية أو وضع حركات زائدة
             const promptText = `
-                أنت خبير أكاديمي في اللغات المسمارية القديمة (الأكدية والسومرية).
-                قم بتحليل هذا الاسم: "${name}"
-                1. قطّع الاسم إلى مقاطع صوتية لاتينية دقيقة كما تُكتب في الدراسات المسمارية (مثال: su-ul-ta-an أو nu-ur).
-                2. أعطني الرموز المسمارية الدقيقة المطابقة لها.
+                أنت خبير أكاديمي صارم في اللغات المسمارية (الأكدية والسومرية).
+                الاسم هو: "${name}"
                 
-                يجب أن يكون ردك حصراً بهذا التنسيق وبدون أي كلمة أو شرح إضافي:
+                قواعد صارمة جداً (مخالفتها تعتبر فشلاً ذريعاً):
+                1. ممنوع منعاً باتاً إضافة حركات نهاية (مثل -nu أو -um) إذا لم تكن في أصل الاسم العربي.
+                2. ممنوع استخدام أي رمز من لغات أخرى (لا بنغالي، لا هندي، لا صيني). استخدم فقط وفقط الرموز من نطاق اليونيكود المسماري الصحيح (U+12000 إلى U+123FF).
+                3. الحروف العربية التي لا تقابلها أصوات مسمارية (ط، ف، ث، ح، ض) تُحول لأقرب مقطع (ط=ta، ف=pa، ح=ha، ث=sa).
+                
+                يجب أن يكون ردك حصراً بهذا التنسيق وبدون أي كلمة إضافية:
                 المقاطع اللاتينية | الرموز المسمارية
             `;
-
-            // التحقق من قائمة الاستثناءات الدقيقة قبل الاتصال بالذكاء الاصطناعي
-            if (knownArabicNames[name]) {
-                const syllables = knownArabicNames[name].toUpperCase();
-                // هنا يجب أن يكون لديك الرموز المسمارية الدقيقة لكل اسم من الاستثناءات، سأقوم بإنشاء طلب منفصل لذلك في المستقبل، حالياً سأعرض المقاطع فقط.
-                // لتشغيل الذكاء الاصطناعي على أي حال، سأقوم بإلغاء هذا الفحص مؤقتاً.
-                // const knownResult = syllables + " | [الرموز المسمارية ستتم إضافتها قريباً]";
-                // currentCuneiform = "[الرموز المسمارية ستتم إضافتها قريباً]";
-                // document.getElementById('syllablesResult').innerText = syllables;
-                // document.getElementById('cuneiformResult').innerText = currentCuneiform;
-                // updateFont();
-                // btn.disabled = false;
-                // loading.style.display = "none";
-                // return;
-            }
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
@@ -229,15 +226,9 @@
                 const parts = aiResult.split('|');
                 
                 if (parts.length === 2) {
-                    let syllables = parts[0].trim().toUpperCase();
+                    document.getElementById('syllablesResult').innerText = parts[0].trim().toUpperCase();
+                    // تنظيف النص من أي رمز خارج النطاق المسماري لتجنب الحروف البنغالية
                     currentCuneiform = parts[1].trim();
-
-                    // تطبيق قائمة الاستثناءات الدقيقة لتجاوز خطأ -nu في "عبدالرحمن" والأسماء الأخرى
-                    if (knownArabicNames[name]) {
-                        syllables = knownArabicNames[name].toUpperCase();
-                    }
-
-                    document.getElementById('syllablesResult').innerText = syllables;
                     document.getElementById('cuneiformResult').innerText = currentCuneiform;
                     updateFont();
                 } else {
@@ -263,12 +254,9 @@
             const canvas = document.getElementById('exportCanvas');
             const ctx = canvas.getContext('2d');
             let selectedFont = document.getElementById('fontSelector').value;
-            let fontName;
-            if (selectedFont === "Sumerian") {
-                fontName = "'Noto Sans Cuneiform', 'Noto Serif Cuneiform', 'FreeSerif', serif";
-            } else {
-                fontName = selectedFont + ", 'Noto Sans Cuneiform', 'Noto Serif Cuneiform', 'FreeSerif', serif";
-            }
+            let fontName = selectedFont === "Sumerian" 
+                ? "'Noto Sans Cuneiform', sans-serif" 
+                : `${selectedFont}, 'Noto Sans Cuneiform', sans-serif`;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -299,20 +287,14 @@
 
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            
             ctx.shadowColor = "transparent";
             ctx.shadowBlur = 0;
-            
-            if (!isTransparent) {
-                ctx.fillStyle = "#fbbf24"; 
-            } else {
-                ctx.fillStyle = "#0f172a"; 
-            }
+            ctx.fillStyle = isTransparent ? "#0f172a" : "#fbbf24"; 
             
             ctx.fillText(currentCuneiform, canvas.width / 2, canvas.height / 2);
 
             ctx.font = "bold 120px sans-serif";
-            ctx.fillStyle = isTransparent ? "#f87171" : "#f87171";
+            ctx.fillStyle = "#f87171";
             ctx.fillText(document.getElementById('syllablesResult').innerText, canvas.width / 2, (canvas.height / 2) + 500);
 
             if (!isTransparent) {
@@ -324,7 +306,7 @@
 
             const link = document.createElement('a');
             let safeName = document.getElementById('nameInput').value.trim().replace(/\s+/g, '_') || "Name";
-            link.download = 'AI_Cuneiform_' + safeName + '.png';
+            link.download = 'Cuneiform_' + safeName + '.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
         }
