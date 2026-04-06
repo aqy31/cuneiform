@@ -311,7 +311,7 @@ input[type="text"]:focus {
 </footer>
 
 <script>
-// القاموس المحلي المدرع بإضافة "سجى" ومثيلاتها بحرف الألف المقصورة الصحيح
+// القاموس المحلي الشامل (خط الدفاع الأول والأساسي)
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
     "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
@@ -330,18 +330,16 @@ const localNamesDictionary = {
     "دعاء": "du a", "إسراء": "is ra", "اسراء": "is ra", "فرح": "pa ra ah", "مروة": "ma ar wa", "صفا": "șa pa",
     "ريم": "ri im", "غفران": "gu up ra an", "هند": "hi in ad", "داليا": "da li ya", "مها": "ma ha", "ندى": "na da",
     "سلمى": "sa al ma", "ليلى": "la ay la", "منى": "mu na", "سجى": "sa ga", "سجا": "sa ga", "سجي": "sa ga", 
-    "أصيل": "a și il", "اصيل": "a și il",
-    "شيماء": "ši ma", "زينة": "zi na", "لبنى": "lu ub na", "رنا": "ra na", "ضحى": "du ha", "سميرة": "sa mi ra",
-    "وفاء": "wa pa", "نهى": "nu ha", "هديل": "ha di il", "ميساء": "ma ay sa", "روعة": "raw a", "بان": "ba an",
-    "دلال": "da la al", "رؤى": "ru a", "بيداء": "ba ay da", "إيلاف": "i la ap", "ايلاف": "i la ap",
+    "أصيل": "a și il", "اصيل": "a și il", "شيماء": "ši ma", "زينة": "zi na", "لبنى": "lu ub na", "رنا": "ra na", 
+    "ضحى": "du ha", "سميرة": "sa mi ra", "وفاء": "wa pa", "نهى": "nu ha", "هديل": "ha di il", "ميساء": "ma ay sa", 
+    "روعة": "raw a", "بان": "ba an", "دلال": "da la al", "رؤى": "ru a", "بيداء": "ba ay da", "إيلاف": "i la ap", "ايلاف": "i la ap",
     "سلطان": "su ul ța an", "عثمان": "u ut ma an", "عمران": "u um ra an",
     "بكر": "ba ki ir", "عائشة": "a i ša", "عائشه": "a i ša", "منير": "mu ni ir",
     "شفيقة": "ša pi qa", "هدبان": "ha ad ba an", "وضحة": "wa aț ha", "خلدون": "ha al du un", 
     "قحطان": "qa ah ța an", "جمال": "ga ma al", "فيصل": "pi iṣ al",
-    "ربا": "ru ba a", "ربى": "ru ba a"
+    "ربا": "ru ba a", "ربى": "ru ba a", "مهند": "mu ha an na ad", "فاضل": "pa aș il", "لطس": "la ți is"
 };
 
-// قاموس المقاطع المسمارية
 const cuneiformMap = {
 "a": "𒀀", "e": "𒂊", "i": "𒄿", "u": "𒌋",
 "diš": "𒁹", "mí": "𒊩", "ba": "𒁀", "be": "𒁁", "bi": "𒁉", "bu": "𒁍", "pu": "𒁍", 
@@ -379,34 +377,34 @@ const part1 = "gsk_mCbhTewoqrNZuysVVgbO";
 const part2 = "WGdyb3FYfw1eP6wNVNRwQtxfHy58b8Ub";
 const GROQ_API_KEY = part1 + part2;
 
-const SYSTEM_PROMPT = `You are an automated transliteration API endpoint. Your ONLY job is to convert Arabic names to space-separated Latin syllables.
-DO NOT output any conversational text, explanations, steps, or greetings. ONLY output the raw syllables.
+// برومبت "التفكير التسلسلي" اللي يمنع الآلة من بلع الحروف (مثل مهند وفاضل)
+const SYSTEM_PROMPT = `You are a strict Akkadian transliteration linguistic engine.
+You MUST process the Arabic name step-by-step to prevent missing any consonants.
 
-MAPPING:
-- ث=t, ج=g, غ=g, ف=p, ش=š, ص=ṣ, ض=ṣ, ط=ṭ, ظ=ṭ, ح=h, خ=h, هـ=h, س=s, ق=q
-- ع, ء, ا, ى, ة = a (or e, i, u)
+MAPPING RULES:
+- ف=p, ج=g, غ=g, ش=š, ص=ṣ, ض=ṣ, ط=ṭ, ظ=ṭ, ح=h, خ=h, هـ=h, س=s, ق=q
+- ع, ء, ا, ى, ة = a/e/i/u
 - و=w/u, ي=y/i
 
-RULES:
-1. NO STANDALONE CONSONANTS. Every consonant MUST have a vowel (CV or VC format).
-2. Silent consonants (Sukun) MUST survive. Attach a vowel to them (e.g., ل -> al/el/il/ul, ن -> an/en/in/un).
-3. STRICT DICTIONARY: You can ONLY use these exact syllables:
+ALLOWED SYLLABLES ONLY:
 [a, e, i, u, diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
 
-Input: خلدون
-Output: ha al du un
+FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+Analysis: [Write phonetic spelling, map consonants, break into syllables]
+Output: [Space-separated syllables]
 
-Input: قحطان
-Output: qa ah ța an
+EXAMPLES:
+Input: مهند
+Analysis: Phonetic: muhannad. Consonants: m, h, n, n, d. Syllables: mu ha an na ad.
+Output: mu ha an na ad
 
-Input: سجى
-Output: sa ga
+Input: فاضل
+Analysis: Phonetic: fadhil. Mapping: f->p, dh->ṣ. Consonants: p, ṣ, l. Syllables: pa aṣ il.
+Output: pa aṣ il
 
-Input: مشاعل
-Output: ma ša il
-
-Input: عبدالرحمن
-Output: ab du ul ra ah ma an`;
+Input: ربا
+Analysis: Phonetic: ruba. Syllables: ru ba a.
+Output: ru ba a`;
 
 function textToCuneiform(syllablesText) {
     let processedText = syllablesText.toLowerCase()
@@ -423,7 +421,8 @@ function textToCuneiform(syllablesText) {
 }
 
 async function processName() {
-    let arName = document.getElementById("arabicNameInput").value.trim();
+    // إزالة المسافات الزائدة من البداية والنهاية والوسط لضمان مطابقة القاموس
+    let arName = document.getElementById("arabicNameInput").value.trim().replace(/\s+/g, ' ');
     if (!arName) return alert("اكتب الاسم أولاً يا عيني!");
 
     const outputEl = document.getElementById("cuneiformOutput");
@@ -433,7 +432,6 @@ async function processName() {
     outputEl.innerText = "";
     latinEl.innerText = "";
 
-    // الفحص بالقاموس المحلي (وهالمرة سجى وربى موجودات بالألف المقصورة)
     if (localNamesDictionary[arName]) {
         let syllables = localNamesDictionary[arName];
         latinEl.innerText = syllables;
@@ -450,7 +448,7 @@ async function processName() {
             model: "llama-3.1-8b-instant",
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
-                { role: "user", content: `Input: ${arName}\nOutput:` }
+                { role: "user", content: `Input: ${arName}` }
             ],
             temperature: 0.1
         };
@@ -470,10 +468,17 @@ async function processName() {
         }
 
         const data = await response.json();
-        let aiSyllables = data.choices[0].message.content;
+        let aiText = data.choices[0].message.content;
         
-        // الفلتر الحديدي يمسح أي i يجي بعد حرف a مثل (sa ga i)
-        aiSyllables = aiSyllables.replace(/output:/ig, "")
+        // استخراج النتيجة بعد كلمة Output
+        let aiSyllables = aiText;
+        let match = aiText.match(/Output:\s*(.*)/i);
+        if (match) {
+            aiSyllables = match[1];
+        }
+
+        // الفلتر الحديدي لضمان عدم ظهور حروف شاذة أو مشاكل الألف المقصورة
+        aiSyllables = aiSyllables
             .replace(/f/ig, "p")
             .replace(/j/ig, "g")
             .replace(/v/ig, "w")
@@ -483,11 +488,10 @@ async function processName() {
             .replace(/([^a-z])man\b/ig, "$1ma an")
             .replace(/([^a-z])dan\b/ig, "$1da an")
             .replace(/\b([bcdfghjklmnpqrstvwxyz])\b/ig, "i$1")
-            .replace(/a\s+i\b/ig, "a") // يمسح الـ i الزايدة إذا اجت بنهاية الكلمة المفتوحة 
             .replace(/[^a-zA-Zāīūṭṣšḥ\sțș]/ig, "")
             .trim().toLowerCase();
-        
-        // منع حالة (sa ga i) إجبارياً
+
+        // مسح حرف (i) الغبي اللي يجي بنهاية كلمة مثل سجى (sa ga i) إذا كانت الكلمة تنتهي بألف مقصورة
         if (arName.endsWith("ى") && aiSyllables.endsWith(" i")) {
             aiSyllables = aiSyllables.slice(0, -2);
         }
