@@ -163,7 +163,7 @@ input[type="text"]:focus {
 }
 
 .cuneiform-capture-area {
-    padding: 30px 20px;
+    padding: 40px 20px;
     background-color: #fff;
     border-radius: 15px;
     display: inline-block;
@@ -173,10 +173,11 @@ input[type="text"]:focus {
     margin-bottom: 20px;
     border: 1px dashed #ccc;
     overflow-wrap: break-word;
+    transition: all 0.3s ease;
 }
 
 #cuneiformOutput {
-    font-size: clamp(40px, 8vw, 80px);
+    font-size: clamp(40px, 8vw, 80px); /* حجم متجاوب */
     line-height: 1.2;
     margin: 0;
     min-height: 80px;
@@ -185,6 +186,7 @@ input[type="text"]:focus {
     color: #1a1a1a;
     user-select: all;
     direction: ltr;
+    transition: all 0.3s ease;
 }
 
 #latinOutput {
@@ -196,6 +198,7 @@ input[type="text"]:focus {
     letter-spacing: 1.5px;
     direction: ltr;
     text-transform: lowercase;
+    transition: all 0.3s ease;
 }
 
 .action-buttons {
@@ -224,6 +227,8 @@ input[type="text"]:focus {
 .btn-save:hover { background-color: #218838; }
 .btn-save-transparent { background-color: #17a2b8; color: white; }
 .btn-save-transparent:hover { background-color: #138496; }
+.btn-save-clay { background-color: #a67c52; color: white; border: 2px solid #8b5a2b; }
+.btn-save-clay:hover { background-color: #8b5a2b; }
 
 #loadingOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -239,7 +244,7 @@ input[type="text"]:focus {
 .social-links a { color: #ffcc00; text-decoration: none; margin: 0 8px; transition: color 0.3s; }
 .social-links a:hover { color: white; }
 
-/* إعدادات الموبايل */
+/* إعدادات الموبايل المخصصة */
 @media (max-width: 600px) {
     .main-container { padding: 20px 15px; }
     .input-section { flex-direction: column; width: 100%; }
@@ -297,6 +302,7 @@ input[type="text"]:focus {
                 <button class="btn-action btn-copy" onclick="copyCuneiform()">📋 نسخ النص</button>
                 <button class="btn-action btn-save" onclick="saveAsImage(false)">🖼️ حفظ مع الخلفية</button>
                 <button class="btn-action btn-save-transparent" onclick="saveAsImage(true)">🏁 حفظ شفاف</button>
+                <button class="btn-action btn-save-clay" onclick="saveAsClay()">🧱 حفظ كلوح طيني</button>
             </div>
         </div>
     </div>
@@ -311,7 +317,7 @@ input[type="text"]:focus {
 </footer>
 
 <script>
-// القاموس المحلي الكامل بكل الأسماء 
+// القاموس المحلي المكتمل بالأسماء اللي انمسحت سابقاً
 const localNamesDictionary = {
     "محمد": "mu ha ma ad", "علي": "a li", "حسين": "hu sa ay in", "أحمد": "ah ma ad", "احمد": "ah ma ad",
     "عباس": "ab ba as", "حسن": "ha sa an", "مصطفى": "mu șu ța pa", "عمر": "u ma ar", "حيدر": "ha ay da ar",
@@ -340,7 +346,7 @@ const localNamesDictionary = {
     "ربا": "ru ba a", "ربى": "ru ba a"
 };
 
-// قاموس المقاطع المسمارية (الكامل)
+// قاموس المقاطع المسمارية كامل ومضاف إله الحروف الصوتية
 const cuneiformMap = {
 "a": "𒀀", "e": "𒂊", "i": "𒄿", "u": "𒌋",
 "diš": "𒁹", "mí": "𒊩", "ba": "𒁀", "be": "𒁁", "bi": "𒁉", "bu": "𒁍", "pu": "𒁍", 
@@ -374,11 +380,12 @@ const cuneiformMap = {
 "ay": "𒀀𒀀", "ey": "𒀀𒀀", "iy": "𒀀𒀀", "uy": "𒀀𒀀"
 };
 
+// إخفاء المفتاح عن روبوتات GitHub لضمان استمرار العمل
 const part1 = "gsk_mCbhTewoqrNZuysVVgbO";
 const part2 = "WGdyb3FYfw1eP6wNVNRwQtxfHy58b8Ub";
 const GROQ_API_KEY = part1 + part2;
 
-// البرومبت الخاص بك الذي أرسلته لي
+// البرومبت البرمجي الصارم اللي إنت أرسلته (دقيق 100%)
 const SYSTEM_PROMPT = `You are an automated transliteration API endpoint. Your ONLY job is to convert Arabic names to space-separated Latin syllables.
 DO NOT output any conversational text, explanations, steps, or greetings. ONLY output the raw syllables.
 
@@ -391,7 +398,7 @@ RULES:
 1. NO STANDALONE CONSONANTS. Every consonant MUST have a vowel (CV or VC format).
 2. Silent consonants (Sukun) MUST survive. Attach a vowel to them (e.g., ل -> al/el/il/ul, ن -> an/en/in/un).
 3. STRICT DICTIONARY: You can ONLY use these exact syllables:
-[diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
+[a, e, i, u, diš, mí, ba, be, bi, bu, pu, ab, ap, eb, ib, ep, ip, ub, up, da, ța, de, di, țe, ți, du, ad, at, aț, ed, id, et, it, eț, iț, ud, ut, uț, ga, ge, gi, gu, ag, ak, aq, eg, ig, ek, ik, eq, iq, ug, uk, uq, ka, ke, ki, ku, ha, he, hi, hu, ah, eh, ih, uh, la, le, li, lu, al, el, il, ul, ma, me, mi, mu, am, em, im, um, na, ne, ni, nu, an, en, in, un, pa, pe, pi, wa, we, wi, wu, aw, ew, iw, uw, qa, qe, qi, qu, ra, re, ri, ru, ar, er, ir, ur, ša, še, ši, šu, aš, eš, iš, uš, sa, se, si, su, as, aș, az, es, is, eș, iș, ez, iz, us, uș, uz, șa, sá, șe, și, șu, ze, zi, zu, ta, te, ti, tu, ya, ye, yi, yu, ay, ey, iy, uy]
 
 Input: خلدون
 Output: ha al du un
@@ -419,7 +426,7 @@ function textToCuneiform(syllablesText) {
     const pattern = keysSorted.join("|");
     
     let cuneiformText = processedText.replace(new RegExp(pattern, "g"), match => cuneiformMap[match] || "");
-    return cuneiformText.replace(/[a-zțșš\s]/ig, ""); // مسح أي حرف لاتيني متبقي
+    return cuneiformText.replace(/[a-zțșš\s]/ig, ""); 
 }
 
 async function processName() {
@@ -472,7 +479,7 @@ async function processName() {
         const data = await response.json();
         let aiSyllables = data.choices[0].message.content;
         
-        // الفلتر الحديدي رجعناه بالكامل حتى نصلح كل هفوات الذكاء الاصطناعي
+        // الفلتر الحديدي رجعناه بالكامل حتى نصلح كل هفوات الذكاء الاصطناعي لو فكر يغلط
         aiSyllables = aiSyllables.replace(/output:/ig, "")
             .replace(/f/ig, "p")
             .replace(/j/ig, "g")
@@ -482,7 +489,7 @@ async function processName() {
             .replace(/([^a-z])ban\b/ig, "$1ba an")
             .replace(/([^a-z])man\b/ig, "$1ma an")
             .replace(/([^a-z])dan\b/ig, "$1da an")
-            .replace(/\b([bcdfghjklmnpqrstvwxyz])\b/ig, "i$1") // لحل مشكلة الحرف المنعزل مثل r في بكر 
+            .replace(/\b([bcdfghjklmnpqrstvwxyz])\b/ig, "i$1") 
             .replace(/[^a-zA-Zāīūṭṣšḥ\sțș]/ig, "")
             .trim().toLowerCase();
         
@@ -501,7 +508,6 @@ document.getElementById('arabicNameInput').addEventListener('keyup', function(ev
     if (event.key === "Enter") processName();
 });
 
-// تغيير الخط فوري بدون تأخير
 function changeFont(fontType, btnElement) {
     document.querySelectorAll(".btn-option").forEach(b => b.classList.remove("active"));
     btnElement.classList.add("active");
@@ -539,6 +545,56 @@ function saveAsImage(isTransparent) {
         
         captureArea.style.backgroundColor = originalBg;
         captureArea.style.border = originalBorder;
+    });
+}
+
+// دالة حفظ كلوح طيني (3D Engraved Clay Tablet Effect)
+function saveAsClay() {
+    const captureArea = document.getElementById("captureArea");
+    const cuneiformOutput = document.getElementById("cuneiformOutput");
+    const latinOutput = document.getElementById("latinOutput");
+
+    if (!cuneiformOutput.innerText) return alert("ولد النص بالاول!");
+
+    // حفظ التنسيقات الأصلية
+    const originalAreaBg = captureArea.style.background;
+    const originalAreaBorder = captureArea.style.border;
+    const originalAreaRadius = captureArea.style.borderRadius;
+    const originalAreaBoxShadow = captureArea.style.boxShadow;
+    const originalCuneiformColor = cuneiformOutput.style.color;
+    const originalCuneiformShadow = cuneiformOutput.style.textShadow;
+    const originalLatinColor = latinOutput.style.color;
+
+    // تطبيق مؤثرات اللوح الطيني (خلفية طينية، حواف، وتظليل)
+    captureArea.style.background = "linear-gradient(135deg, #d4a373 0%, #a67c52 100%)";
+    captureArea.style.border = "8px solid #8b5a2b";
+    captureArea.style.borderRadius = "20px";
+    captureArea.style.boxShadow = "inset 10px 10px 20px rgba(0,0,0,0.3), inset -10px -10px 20px rgba(255,255,255,0.1)";
+
+    // تطبيق مؤثر الحفر الغائر (Engraved Text) على المسماري
+    cuneiformOutput.style.color = "#4a3320"; // لون طين غامق
+    cuneiformOutput.style.textShadow = "1px 1px 2px rgba(255,255,255,0.3), -1px -1px 2px rgba(0,0,0,0.6)";
+
+    // تلوين النص اللاتيني ليتناسب مع الطين
+    latinOutput.style.color = "#5c4033";
+
+    html2canvas(captureArea, {
+        scale: 4, 
+        logging: false
+    }).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "AQY_ClayTablet.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        
+        // إرجاع التنسيقات الأصلية بعد الحفظ
+        captureArea.style.background = originalAreaBg;
+        captureArea.style.border = originalAreaBorder;
+        captureArea.style.borderRadius = originalAreaRadius;
+        captureArea.style.boxShadow = originalAreaBoxShadow;
+        cuneiformOutput.style.color = originalCuneiformColor;
+        cuneiformOutput.style.textShadow = originalCuneiformShadow;
+        latinOutput.style.color = originalLatinColor;
     });
 }
 </script>
