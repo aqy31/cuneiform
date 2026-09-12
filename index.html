@@ -549,165 +549,111 @@ function copyCuneiform() {
     navigator.clipboard.writeText(textToCopy).then(() => alert("تم النسخ بنجاح! 📋"));
 }
 
-async function loadFontAsBase64(url) {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
+// تحميل الخطوط مسبقاً لضمان جاهزيتها للـ Canvas
+let fontsReady = false;
+document.fonts.ready.then(() => { fontsReady = true; });
+
+function getActiveFontFamily() {
+    if (activeFontType === 'babylonian') return "'BabylonianCuneiform'";
+    if (activeFontType === 'assyrian') return "'AssyrianCuneiform'";
+    return "'SumerianCuneiform'";
 }
 
-async function saveAsSVG(isTransparent) {
+function triggerDownload(dataUrl, filename) {
+    const link = document.createElement('a');
+    link.setAttribute('download', filename);
+    link.setAttribute('href', dataUrl);
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    setTimeout(() => {
+        link.click();
+        setTimeout(() => document.body.removeChild(link), 200);
+    }, 100);
+}
+
+function saveAsPNG() {
     const cuneiformText = document.getElementById("cuneiformOutput").innerText;
     const latinText = document.getElementById("latinOutput").innerText;
     if (!cuneiformText) return alert("ولد النص بالاول!");
 
-    // تحديد ملف الخط حسب الخط المختار
-    let fontFile, fontName;
-    if (activeFontType === 'babylonian') {
-        fontFile = 'Babylonian.ttf'; fontName = 'BabylonianCuneiform';
-    } else if (activeFontType === 'assyrian') {
-        fontFile = 'Assyrian.ttf'; fontName = 'AssyrianCuneiform';
-    } else {
-        fontFile = 'Sumerian.ttf'; fontName = 'SumerianCuneiform';
+    const fontFamily = getActiveFontFamily();
+    const fontSize = 200;
+    const latinFontSize = 40;
+    const padding = 80;
+
+    // Canvas مؤقت لقياس النص
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+    measureCtx.font = `${fontSize}px ${fontFamily}`;
+    const textMetrics = measureCtx.measureText(cuneiformText);
+    const textWidth = Math.max(textMetrics.width, 400);
+
+    const canvasWidth = textWidth + (padding * 2);
+    const canvasHeight = latinText ? (fontSize + latinFontSize + padding * 3) : (fontSize + padding * 2);
+
+    // Canvas النهائي بالحجم الكامل
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext('2d');
+
+    // خلفية شفافة (لا نرسم شي)
+
+    // رسم النص المسماري
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const cuneiformY = latinText ? (canvasHeight * 0.4) : (canvasHeight / 2);
+    ctx.fillText(cuneiformText, canvasWidth / 2, cuneiformY);
+
+    // رسم النص اللاتيني
+    if (latinText) {
+        ctx.font = `${latinFontSize}px Arial, sans-serif`;
+        ctx.fillStyle = '#6c757d';
+        ctx.fillText(latinText, canvasWidth / 2, canvasHeight * 0.78);
     }
 
-    // تحميل الخط كـ base64 ودمجه بالـ SVG
-    let fontBase64;
-    try {
-        fontBase64 = await loadFontAsBase64(fontFile);
-    } catch(e) {
-        alert("تعذر تحميل ملف الخط! تأكد إن ملف " + fontFile + " موجود بنفس المجلد.");
-        return;
-    }
+    // حفظ PNG
+    const dataUrl = canvas.toDataURL('image/png');
+    triggerDownload(dataUrl, 'AQY_HighRes_Transparent.png');
+}
 
-    // حساب أبعاد الصورة
+function saveAsSVG(isTransparent) {
+    const cuneiformText = document.getElementById("cuneiformOutput").innerText;
+    const latinText = document.getElementById("latinOutput").innerText;
+    if (!cuneiformText) return alert("ولد النص بالاول!");
+
+    const fontFamily = getActiveFontFamily();
     const fontSize = 80;
     const latinFontSize = 18;
-    const charWidth = fontSize * 1.1;
-    const textWidth = Math.max(cuneiformText.length * charWidth, 300);
+
+    // قياس العرض بـ Canvas
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+    measureCtx.font = `${fontSize}px ${fontFamily}`;
+    const textWidth = Math.max(measureCtx.measureText(cuneiformText).width, 300);
     const svgWidth = textWidth + 100;
     const svgHeight = latinText ? 200 : 150;
 
-    const bgRect = isTransparent ? '' : `<rect width="100%" height="100%" fill="#ffffff" rx="15"/>`;
-
-    const latinBlock = latinText ? `<text x="50%" y="80%" text-anchor="middle" dominant-baseline="middle"
-        font-family="Arial, sans-serif" font-size="${latinFontSize}px" fill="#6c757d" letter-spacing="1.5px">${escapeXML(latinText)}</text>` : '';
+    const bgRect = isTransparent ? '' : '<rect width="100%" height="100%" fill="#ffffff" rx="15"/>';
+    const latinBlock = latinText ? `<text x="50%" y="80%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${latinFontSize}px" fill="#6c757d" letter-spacing="1.5px">${escapeXML(latinText)}</text>` : '';
 
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
-  <defs>
-    <style>
-      @font-face {
-        font-family: '${fontName}';
-        src: url('${fontBase64}') format('truetype');
-      }
-    </style>
-  </defs>
   ${bgRect}
   <text x="50%" y="${latinText ? '45%' : '55%'}" text-anchor="middle" dominant-baseline="middle"
-        font-family="'${fontName}'" font-size="${fontSize}px" fill="#1a1a1a">${escapeXML(cuneiformText)}</text>
+        font-family=${fontFamily} font-size="${fontSize}px" fill="#1a1a1a">${escapeXML(cuneiformText)}</text>
   ${latinBlock}
 </svg>`;
 
-    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = isTransparent ? 'AQY_Transparent.svg' : 'AQY_White.svg';
-    link.href = url;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
+    const filename = isTransparent ? 'AQY_Transparent.svg' : 'AQY_White.svg';
+    triggerDownload(dataUrl, filename);
 }
 
 function escapeXML(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-}
-
-async function saveAsPNG() {
-    const cuneiformText = document.getElementById("cuneiformOutput").innerText;
-    const latinText = document.getElementById("latinOutput").innerText;
-    if (!cuneiformText) return alert("ولد النص بالاول!");
-
-    const loadingEl = document.getElementById("loadingOverlay");
-    loadingEl.style.display = "flex";
-    loadingEl.innerText = "جاري تجهيز الصورة بدقة عالية...";
-
-    try {
-        // تحديد الخط
-        let fontFile, fontName;
-        if (activeFontType === 'babylonian') {
-            fontFile = 'Babylonian.ttf'; fontName = 'BabylonianCuneiform';
-        } else if (activeFontType === 'assyrian') {
-            fontFile = 'Assyrian.ttf'; fontName = 'AssyrianCuneiform';
-        } else {
-            fontFile = 'Sumerian.ttf'; fontName = 'SumerianCuneiform';
-        }
-
-        const fontBase64 = await loadFontAsBase64(fontFile);
-
-        // أبعاد الـ SVG
-        const fontSize = 80;
-        const latinFontSize = 18;
-        const charWidth = fontSize * 1.1;
-        const textWidth = Math.max(cuneiformText.length * charWidth, 300);
-        const svgWidth = textWidth + 100;
-        const svgHeight = latinText ? 200 : 150;
-
-        const latinBlock = latinText ? `<text x="50%" y="80%" text-anchor="middle" dominant-baseline="middle"
-            font-family="Arial, sans-serif" font-size="${latinFontSize}px" fill="#6c757d" letter-spacing="1.5px">${escapeXML(latinText)}</text>` : '';
-
-        // SVG مع خط مدمج - شفاف بدون خلفية
-        const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
-  <defs>
-    <style>
-      @font-face {
-        font-family: '${fontName}';
-        src: url('${fontBase64}') format('truetype');
-      }
-    </style>
-  </defs>
-  <text x="50%" y="${latinText ? '45%' : '55%'}" text-anchor="middle" dominant-baseline="middle"
-        font-family="'${fontName}'" font-size="${fontSize}px" fill="#1a1a1a">${escapeXML(cuneiformText)}</text>
-  ${latinBlock}
-</svg>`;
-
-        // تحويل SVG لـ Image ثم Canvas بدقة 8x
-        const scale = 8;
-        const canvas = document.createElement('canvas');
-        canvas.width = svgWidth * scale;
-        canvas.height = svgHeight * scale;
-        const ctx = canvas.getContext('2d');
-
-        const img = new Image();
-        const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-        const svgUrl = URL.createObjectURL(svgBlob);
-
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = svgUrl;
-        });
-
-        ctx.drawImage(img, 0, 0, svgWidth * scale, svgHeight * scale);
-        URL.revokeObjectURL(svgUrl);
-
-        // حفظ PNG
-        const pngUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = 'AQY_HighRes_Transparent.png';
-        link.href = pngUrl;
-        link.click();
-
-    } catch(e) {
-        console.error('خطأ حفظ PNG:', e);
-        alert('حصل خطأ: ' + e.message);
-    } finally {
-        loadingEl.style.display = "none";
-        loadingEl.innerText = "جاري التحويل ...";
-    }
 }
 </script>
 </body>
