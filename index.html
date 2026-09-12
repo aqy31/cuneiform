@@ -559,16 +559,16 @@ function getActiveFontFamily() {
     return "'SumerianCuneiform'";
 }
 
-function triggerDownload(dataUrl, filename) {
+function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('download', filename);
-    link.setAttribute('href', dataUrl);
+    link.href = url;
+    link.download = filename;
     link.style.display = 'none';
     document.body.appendChild(link);
-    setTimeout(() => {
-        link.click();
-        setTimeout(() => document.body.removeChild(link), 200);
-    }, 100);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 
 function saveAsPNG() {
@@ -591,13 +591,11 @@ function saveAsPNG() {
     const canvasWidth = textWidth + (padding * 2);
     const canvasHeight = latinText ? (fontSize + latinFontSize + padding * 3) : (fontSize + padding * 2);
 
-    // Canvas النهائي بالحجم الكامل
+    // Canvas النهائي
     const canvas = document.createElement('canvas');
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     const ctx = canvas.getContext('2d');
-
-    // خلفية شفافة (لا نرسم شي)
 
     // رسم النص المسماري
     ctx.font = `${fontSize}px ${fontFamily}`;
@@ -614,9 +612,11 @@ function saveAsPNG() {
         ctx.fillText(latinText, canvasWidth / 2, canvasHeight * 0.78);
     }
 
-    // حفظ PNG
-    const dataUrl = canvas.toDataURL('image/png');
-    triggerDownload(dataUrl, 'AQY_HighRes_Transparent.png');
+    // تحويل لـ Blob بنوع octet-stream عشان يجبر Safari يحمل مباشرة
+    canvas.toBlob(function(pngBlob) {
+        const forcedBlob = new Blob([pngBlob], { type: 'application/octet-stream' });
+        triggerDownload(forcedBlob, 'AQY_HighRes_Transparent.png');
+    }, 'image/png');
 }
 
 function saveAsSVG(isTransparent) {
@@ -628,7 +628,7 @@ function saveAsSVG(isTransparent) {
     const fontSize = 80;
     const latinFontSize = 18;
 
-    // قياس العرض بـ Canvas
+    // قياس العرض
     const measureCanvas = document.createElement('canvas');
     const measureCtx = measureCanvas.getContext('2d');
     measureCtx.font = `${fontSize}px ${fontFamily}`;
@@ -647,9 +647,10 @@ function saveAsSVG(isTransparent) {
   ${latinBlock}
 </svg>`;
 
-    const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
+    // Blob بنوع octet-stream عشان يجبر Safari يحمل مباشرة بدل ما يفتح صفحة
+    const svgBlob = new Blob([svgContent], { type: 'application/octet-stream' });
     const filename = isTransparent ? 'AQY_Transparent.svg' : 'AQY_White.svg';
-    triggerDownload(dataUrl, filename);
+    triggerDownload(svgBlob, filename);
 }
 
 function escapeXML(str) {
