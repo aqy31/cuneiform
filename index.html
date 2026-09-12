@@ -527,10 +527,13 @@ document.getElementById('arabicNameInput').addEventListener('keyup', function(ev
     if (event.key === "Enter") processName();
 });
 
+let activeFontType = 'sumerian'; // تتبع الخط المختار
+
 function changeFont(fontType, btnElement) {
     document.querySelectorAll(".btn-option").forEach(b => b.classList.remove("active"));
     btnElement.classList.add("active");
     const output = document.getElementById("cuneiformOutput");
+    activeFontType = fontType;
     
     if (fontType === 'sumerian') output.style.fontFamily = "'SumerianCuneiform', 'Noto Sans Cuneiform', sans-serif";
     else if (fontType === 'babylonian') output.style.fontFamily = "'BabylonianCuneiform', sans-serif";
@@ -543,32 +546,68 @@ function copyCuneiform() {
     navigator.clipboard.writeText(textToCopy).then(() => alert("تم النسخ بنجاح! 📋"));
 }
 
-function saveAsSVG(isTransparent) {
+async function loadFontAsBase64(url) {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+async function saveAsSVG(isTransparent) {
     const cuneiformText = document.getElementById("cuneiformOutput").innerText;
     const latinText = document.getElementById("latinOutput").innerText;
     if (!cuneiformText) return alert("ولد النص بالاول!");
 
-    // حساب عرض النص التقريبي
+    // تحديد ملف الخط حسب الخط المختار
+    let fontFile, fontName;
+    if (activeFontType === 'babylonian') {
+        fontFile = 'Babylonian.ttf'; fontName = 'BabylonianCuneiform';
+    } else if (activeFontType === 'assyrian') {
+        fontFile = 'Assyrian.ttf'; fontName = 'AssyrianCuneiform';
+    } else {
+        fontFile = 'Sumerian.ttf'; fontName = 'SumerianCuneiform';
+    }
+
+    // تحميل الخط كـ base64 ودمجه بالـ SVG
+    let fontBase64;
+    try {
+        fontBase64 = await loadFontAsBase64(fontFile);
+    } catch(e) {
+        alert("تعذر تحميل ملف الخط! تأكد إن ملف " + fontFile + " موجود بنفس المجلد.");
+        return;
+    }
+
+    // حساب أبعاد الصورة
     const fontSize = 80;
     const latinFontSize = 18;
-    const charWidth = fontSize * 1.2;
+    const charWidth = fontSize * 1.1;
     const textWidth = Math.max(cuneiformText.length * charWidth, 300);
-    const svgWidth = textWidth + 80;
-    const svgHeight = latinText ? 180 : 140;
-
-    // الحصول على الفونت المستخدم حالياً
-    const outputEl = document.getElementById("cuneiformOutput");
-    const currentFont = window.getComputedStyle(outputEl).fontFamily;
+    const svgWidth = textWidth + 100;
+    const svgHeight = latinText ? 200 : 150;
 
     const bgRect = isTransparent ? '' : `<rect width="100%" height="100%" fill="#ffffff" rx="15"/>`;
 
+    const latinBlock = latinText ? `<text x="50%" y="80%" text-anchor="middle" dominant-baseline="middle"
+        font-family="Arial, sans-serif" font-size="${latinFontSize}px" fill="#6c757d" letter-spacing="1.5px">${escapeXML(latinText)}</text>` : '';
+
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
+  <defs>
+    <style>
+      @font-face {
+        font-family: '${fontName}';
+        src: url('${fontBase64}') format('truetype');
+      }
+    </style>
+  </defs>
   ${bgRect}
   <text x="50%" y="${latinText ? '45%' : '55%'}" text-anchor="middle" dominant-baseline="middle"
-        font-family="${currentFont}" font-size="${fontSize}px" fill="#1a1a1a">${escapeXML(cuneiformText)}</text>
-  ${latinText ? `<text x="50%" y="80%" text-anchor="middle" dominant-baseline="middle"
-        font-family="Cairo, sans-serif" font-size="${latinFontSize}px" fill="#6c757d" letter-spacing="1.5px">${escapeXML(latinText)}</text>` : ''}
+        font-family="'${fontName}'" font-size="${fontSize}px" fill="#1a1a1a">${escapeXML(cuneiformText)}</text>
+  ${latinBlock}
 </svg>`;
 
     const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
@@ -577,7 +616,7 @@ function saveAsSVG(isTransparent) {
     link.download = isTransparent ? 'AQY_Transparent.svg' : 'AQY_White.svg';
     link.href = url;
     link.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function escapeXML(str) {
