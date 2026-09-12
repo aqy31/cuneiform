@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AQY | محول الأسماء المسمارية الاحترافي</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 
 <link rel="preload" href="Sumerian.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="Babylonian.ttf" as="font" type="font/ttf" crossorigin>
@@ -295,8 +295,8 @@ input[type="text"]:focus {
 
             <div class="action-buttons">
                 <button class="btn-action btn-copy" onclick="copyCuneiform()"> نسخ النص</button>
-                <button class="btn-action btn-save" onclick="saveAsImage(false)">حفظ مع الخلفية</button>
-                <button class="btn-action btn-save-transparent" onclick="saveAsImage(true)"> حفظ شفاف</button>
+                <button class="btn-action btn-save" onclick="saveAsSVG(false)">حفظ SVG مع خلفية</button>
+                <button class="btn-action btn-save-transparent" onclick="saveAsSVG(true)">حفظ SVG شفاف</button>
             </div>
         </div>
     </div>
@@ -424,6 +424,11 @@ function textToCuneiform(syllablesText) {
     return cuneiformText.replace(/[a-zțșš\s]/ig, ""); 
 }
 
+// دالة تكتشف إذا النص يحتوي حروف مسمارية (Unicode Cuneiform range)
+function isCuneiform(text) {
+    return /[\u{12000}-\u{1254F}]/u.test(text);
+}
+
 async function processName() {
     // إزالة المسافات الزائدة من البداية والنهاية والوسط لضمان مطابقة القاموس
     let arName = document.getElementById("arabicNameInput").value.trim().replace(/\s+/g, ' ');
@@ -435,6 +440,13 @@ async function processName() {
 
     outputEl.innerText = "";
     latinEl.innerText = "";
+
+    // إذا المستخدم لصق نص مسماري مباشرة، اعرضه بدون تحويل
+    if (isCuneiform(arName)) {
+        outputEl.innerText = arName;
+        latinEl.innerText = "(نص مسماري مُدخل مباشرة)";
+        return;
+    }
 
     if (localNamesDictionary[arName]) {
         let syllables = localNamesDictionary[arName];
@@ -531,33 +543,45 @@ function copyCuneiform() {
     navigator.clipboard.writeText(textToCopy).then(() => alert("تم النسخ بنجاح! 📋"));
 }
 
-function saveAsImage(isTransparent) {
-    const captureArea = document.getElementById("captureArea");
-    if (!document.getElementById("cuneiformOutput").innerText) return alert("ولد النص بالاول!");
+function saveAsSVG(isTransparent) {
+    const cuneiformText = document.getElementById("cuneiformOutput").innerText;
+    const latinText = document.getElementById("latinOutput").innerText;
+    if (!cuneiformText) return alert("ولد النص بالاول!");
 
-    const originalBg = captureArea.style.backgroundColor;
-    const originalBorder = captureArea.style.border;
+    // حساب عرض النص التقريبي
+    const fontSize = 80;
+    const latinFontSize = 18;
+    const charWidth = fontSize * 1.2;
+    const textWidth = Math.max(cuneiformText.length * charWidth, 300);
+    const svgWidth = textWidth + 80;
+    const svgHeight = latinText ? 180 : 140;
 
-    captureArea.style.border = "none";
-    captureArea.style.backgroundColor = isTransparent ? "transparent" : "#ffffff";
+    // الحصول على الفونت المستخدم حالياً
+    const outputEl = document.getElementById("cuneiformOutput");
+    const currentFont = window.getComputedStyle(outputEl).fontFamily;
 
-    html2canvas(captureArea, {
-        backgroundColor: isTransparent ? null : "#ffffff",
-        scale: 3, logging: false, useCORS: true, allowTaint: true
-    }).then(canvas => {
-        const link = document.createElement("a");
-        link.download = isTransparent ? "AQY_Transparent.png" : "AQY_White.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-        
-        captureArea.style.backgroundColor = originalBg;
-        captureArea.style.border = originalBorder;
-    }).catch(err => {
-        console.error("خطأ في حفظ الصورة:", err);
-        alert("حصل خطأ أثناء حفظ الصورة، حاول مرة ثانية!");
-        captureArea.style.backgroundColor = originalBg;
-        captureArea.style.border = originalBorder;
-    });
+    const bgRect = isTransparent ? '' : `<rect width="100%" height="100%" fill="#ffffff" rx="15"/>`;
+
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
+  ${bgRect}
+  <text x="50%" y="${latinText ? '45%' : '55%'}" text-anchor="middle" dominant-baseline="middle"
+        font-family="${currentFont}" font-size="${fontSize}px" fill="#1a1a1a">${escapeXML(cuneiformText)}</text>
+  ${latinText ? `<text x="50%" y="80%" text-anchor="middle" dominant-baseline="middle"
+        font-family="Cairo, sans-serif" font-size="${latinFontSize}px" fill="#6c757d" letter-spacing="1.5px">${escapeXML(latinText)}</text>` : ''}
+</svg>`;
+
+    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = isTransparent ? 'AQY_Transparent.svg' : 'AQY_White.svg';
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+function escapeXML(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 </script>
 </body>
