@@ -449,7 +449,7 @@ async function processName() {
         const url = "https://api.groq.com/openai/v1/chat/completions";
         
         const requestBody = {
-            model: "llama-3.1-8b-instant",
+            model: "qwen/qwen3.8-27b",
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
                 { role: "user", content: `Input: ${arName}` }
