@@ -543,13 +543,18 @@ function saveAsImage(isTransparent) {
 
     html2canvas(captureArea, {
         backgroundColor: isTransparent ? null : "#ffffff",
-        scale: 10, logging: false
+        scale: 3, logging: false, useCORS: true, allowTaint: true
     }).then(canvas => {
         const link = document.createElement("a");
         link.download = isTransparent ? "AQY_Transparent.png" : "AQY_White.png";
         link.href = canvas.toDataURL("image/png");
         link.click();
         
+        captureArea.style.backgroundColor = originalBg;
+        captureArea.style.border = originalBorder;
+    }).catch(err => {
+        console.error("خطأ في حفظ الصورة:", err);
+        alert("حصل خطأ أثناء حفظ الصورة، حاول مرة ثانية!");
         captureArea.style.backgroundColor = originalBg;
         captureArea.style.border = originalBorder;
     });
